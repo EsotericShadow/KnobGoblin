@@ -6,6 +6,10 @@
 #Ignore cursor AI rules
 .cursor/rules/codacy.mdc
 
+# KnobForge local project workspace data
+Projects/
+*.knob
+
 # Standard Visual Studio .gitignore
 ## Ignore Visual Studio temporary files, build results, and generated files
 ## https://docs.microsoft.com/en-us/visualstudio/ide/visual-studio-ide-and-source-control

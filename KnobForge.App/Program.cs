@@ -1,18 +1,23 @@
-﻿using Avalonia;
+using Avalonia;
 using Avalonia.Native;
 using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace KnobForge.App;
 
 class Program
 {
+    private static readonly string FatalLogPath = Path.Combine(Path.GetTempPath(), "knobforge_fatal.log");
+
     // Initialization code. Don't use any Avalonia, third-party APIs or any
     // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
     // yet and stuff might break.
     [STAThread]
     public static void Main(string[] args)
     {
+        WireFatalExceptionLogging();
+
         Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
         Console.SetError(new StreamWriter(Console.OpenStandardError()) { AutoFlush = true });
 
@@ -46,7 +51,17 @@ class Program
             appBuilder = appBuilder.With(options);
         }
 
-        appBuilder.StartWithClassicDesktopLifetime(args);
+        try
+        {
+            appBuilder.StartWithClassicDesktopLifetime(args);
+        }
+        catch (Exception ex)
+        {
+            string message = $">>> [Fatal] Startup crash: {ex}";
+            Console.Error.WriteLine(message);
+            AppendFatalLog(message);
+            throw;
+        }
     }
 
     // Avalonia configuration, don't remove; also used by visual designer.
@@ -55,4 +70,35 @@ class Program
             .UsePlatformDetect()
             .WithInterFont()
             .LogToTrace();
+
+    private static void WireFatalExceptionLogging()
+    {
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+        {
+            string details = e.ExceptionObject is Exception ex
+                ? ex.ToString()
+                : e.ExceptionObject?.ToString() ?? "<null>";
+            AppendFatalLog($">>> [UnhandledException] IsTerminating={e.IsTerminating} {details}");
+        };
+
+        TaskScheduler.UnobservedTaskException += (_, e) =>
+        {
+            AppendFatalLog($">>> [UnobservedTaskException] {e.Exception}");
+            e.SetObserved();
+        };
+    }
+
+    private static void AppendFatalLog(string line)
+    {
+        try
+        {
+            File.AppendAllText(
+                FatalLogPath,
+                $"{DateTime.UtcNow:O} {line}{Environment.NewLine}");
+        }
+        catch
+        {
+            // best effort only
+        }
+    }
 }

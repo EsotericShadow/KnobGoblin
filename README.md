@@ -43,14 +43,98 @@ dotnet run --project KnobForge.App/KnobForge.App.csproj
 
 #### Note for macOS Users
 
-The rendering backend on macOS can be specified using an environment variable. For example, to use Metal (the default):
+KnobForge enforces GPU rendering on macOS and defaults to Metal:
 
 ```bash
 export KNOBFORGE_RENDER_MODE=metal
 dotnet run --project KnobForge.App/KnobForge.App.csproj
 ```
 
-Supported values are `metal`, `opengl`, and `software`.
+### macOS App Bundle, Icon, Installer, and Signing
+
+Local desktop update flow (no Apple Developer account required):
+
+```bash
+cd /Users/main/Desktop/KnobForge
+APP_ICON_SOURCE=/Users/main/Desktop/KnobForge/icon.ico \
+APP_SIGN_IDENTITY=- \
+CODESIGN_ENABLED=1 \
+REGISTER_LAUNCH_SERVICES=0 \
+RESTORE=1 \
+bash scripts/macos/build-app-bundle.sh
+mkdir -p /Users/main/Applications
+rsync -a artifacts/macos/KnobForge.app /Users/main/Applications/
+xattr -dr com.apple.quarantine /Users/main/Applications/KnobForge.app
+open /Users/main/Applications/KnobForge.app
+```
+
+Optional icon fallback (only if the app icon does not show correctly):
+
+```bash
+python3 - <<'PY'
+from PIL import Image
+src='/Users/main/Desktop/KnobForge/icon.ico'
+dst='/Users/main/Desktop/KnobForge/artifacts/macos/KnobForge.app/Contents/Resources/KnobForge.icns'
+img=Image.open(src)
+img.save(dst, format='ICNS', sizes=[(16,16),(32,32),(64,64),(128,128),(256,256),(512,512),(1024,1024)])
+print("wrote:", dst)
+PY
+codesign --force --deep --sign - /Users/main/Desktop/KnobForge/artifacts/macos/KnobForge.app
+rsync -a /Users/main/Desktop/KnobForge/artifacts/macos/KnobForge.app /Users/main/Applications/
+```
+
+Build a full macOS `.app` bundle (with `.knob` file association metadata and app icon generation):
+
+```bash
+bash scripts/macos/build-app-bundle.sh
+```
+
+This produces:
+
+```text
+artifacts/macos/KnobForge.app
+```
+
+Important build variables:
+
+```bash
+APP_VERSION=1.2.0 \
+BUILD_NUMBER=120 \
+BUNDLE_IDENTIFIER=com.knobforge.app \
+APP_ICON_SOURCE=/Users/main/Desktop/KnobForge/icon.ico \
+APP_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
+bash scripts/macos/build-app-bundle.sh
+```
+
+By default, signing uses `/Users/main/Desktop/KnobForge/KnobForge.App/entitlements.macos.plist`. Override with `ENTITLEMENTS_PATH=/path/to/entitlements.plist` if needed.
+
+Create a macOS installer package:
+
+```bash
+INSTALLER_SIGN_IDENTITY="Developer ID Installer: Your Name (TEAMID)" \
+bash scripts/macos/build-installer-pkg.sh
+```
+
+This produces:
+
+```text
+artifacts/macos/KnobForge-<version>.pkg
+```
+
+Notarize and staple (optional but recommended for distribution outside your machine):
+
+```bash
+NOTARYTOOL_PROFILE=knobforge-notary \
+NOTARIZE_TARGET=pkg \
+PKG_PATH=/Users/main/Desktop/KnobForge/artifacts/macos/KnobForge-1.2.0.pkg \
+bash scripts/macos/notarize-release.sh
+```
+
+Set `.knob` as default in Finder:
+
+1. Select any `.knob` file.
+2. `Get Info` -> `Open with` -> choose `KnobForge.app`.
+3. Click `Change All...`.
 
 ## How to Use
 

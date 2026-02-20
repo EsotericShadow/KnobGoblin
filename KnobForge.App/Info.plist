@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>KnobForge</string>
+    <key>CFBundleDisplayName</key>
+    <string>KnobForge</string>
+    <key>CFBundleIconFile</key>
+    <string>KnobForge.icns</string>
+    <key>CFBundleIconName</key>
+    <string>KnobForge</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.knobforge.app</string>
+    <key>CFBundleExecutable</key>
+    <string>KnobForge</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.graphics-design</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>12.0</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeName</key>
+            <string>KnobForge Project</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>CFBundleTypeIconFile</key>
+            <string>KnobForge.icns</string>
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>com.knobforge.project</string>
+            </array>
+        </dict>
+    </array>
+
+    <key>UTExportedTypeDeclarations</key>
+    <array>
+        <dict>
+            <key>UTTypeIdentifier</key>
+            <string>com.knobforge.project</string>
+            <key>UTTypeDescription</key>
+            <string>KnobForge Project</string>
+            <key>UTTypeIconFile</key>
+            <string>KnobForge.icns</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.data</string>
+            </array>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>knob</string>
+                </array>
+                <key>public.mime-type</key>
+                <string>application/x-knobforge-project</string>
+            </dict>
+        </dict>
+    </array>
+</dict>
+</plist>

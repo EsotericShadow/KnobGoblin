@@ -763,6 +763,7 @@ namespace KnobForge.App.Views
             InitializeInspectorUx();
             InitializeUndoRedoSupport();
             WireOpenedHandlers();
+            InitializeNativeMenuBar();
             UpdateWindowTitleForProject();
         }
         private async void OnRenderButtonClick(object? sender, RoutedEventArgs e)

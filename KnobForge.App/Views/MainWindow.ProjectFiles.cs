@@ -26,66 +26,76 @@ namespace KnobForge.App.Views
         public bool TryLoadProjectFromFile(string path, out string error)
         {
             error = string.Empty;
-            if (!KnobProjectFileStore.TryLoadEnvelope(path, out KnobProjectFileEnvelope? envelope, out error) || envelope == null)
-            {
-                return false;
-            }
-
-            InspectorUndoSnapshot? snapshot;
             try
             {
-                snapshot = JsonSerializer.Deserialize<InspectorUndoSnapshot>(envelope.SnapshotJson, ProjectSnapshotJsonOptions);
-            }
-            catch (Exception ex)
-            {
-                error = $"Project snapshot is invalid: {ex.Message}";
-                return false;
-            }
-
-            if (snapshot == null)
-            {
-                error = "Project snapshot is missing.";
-                return false;
-            }
-
-            bool previousApplyingUndoRedo = _applyingUndoRedo;
-            _applyingUndoRedo = true;
-            try
-            {
-                ApplyInspectorUndoSnapshot(snapshot);
-                if (_metalViewport != null)
+                if (!KnobProjectFileStore.TryLoadEnvelope(path, out KnobProjectFileEnvelope? envelope, out error) || envelope == null)
                 {
-                    if (!string.IsNullOrWhiteSpace(envelope.PaintStateJson))
-                    {
-                        _metalViewport.TryImportPaintStateJson(envelope.PaintStateJson);
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(envelope.ViewportStateJson))
-                    {
-                        _metalViewport.TryImportViewportStateJson(envelope.ViewportStateJson);
-                    }
-
-                    _metalViewport.InvalidateGpu();
+                    return false;
                 }
+
+                InspectorUndoSnapshot? snapshot;
+                try
+                {
+                    snapshot = JsonSerializer.Deserialize<InspectorUndoSnapshot>(envelope.SnapshotJson, ProjectSnapshotJsonOptions);
+                }
+                catch (Exception ex)
+                {
+                    error = $"Project snapshot is invalid: {ex.Message}";
+                    return false;
+                }
+
+                if (snapshot == null)
+                {
+                    error = "Project snapshot is missing.";
+                    return false;
+                }
+
+                bool previousApplyingUndoRedo = _applyingUndoRedo;
+                _applyingUndoRedo = true;
+                try
+                {
+                    ApplyInspectorUndoSnapshot(snapshot);
+                    if (_metalViewport != null)
+                    {
+                        if (!string.IsNullOrWhiteSpace(envelope.PaintStateJson))
+                        {
+                            _metalViewport.TryImportPaintStateJson(envelope.PaintStateJson);
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(envelope.ViewportStateJson))
+                        {
+                            _metalViewport.TryImportViewportStateJson(envelope.ViewportStateJson);
+                        }
+
+                        _metalViewport.InvalidateGpu();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    error = $"Failed to apply project state: {ex.Message}";
+                    return false;
+                }
+                finally
+                {
+                    _applyingUndoRedo = previousApplyingUndoRedo;
+                }
+
+                RefreshSceneTree();
+                RefreshInspectorFromProject(InspectorRefreshTabPolicy.FollowSceneSelection);
+                InitializeUndoRedoHistory(resetStacks: true);
+
+                _currentProjectFilePath = Path.GetFullPath(path);
+                UpdateWindowTitleForProject();
+                KnobProjectFileStore.MarkRecentProject(_currentProjectFilePath);
+                RefreshNativeMenuBar();
+                return true;
             }
             catch (Exception ex)
             {
-                error = $"Failed to apply project state: {ex.Message}";
+                error = $"Failed to load project: {ex.Message}";
+                Console.Error.WriteLine($">>> [ProjectLoad] Unexpected exception loading '{path}': {ex}");
                 return false;
             }
-            finally
-            {
-                _applyingUndoRedo = previousApplyingUndoRedo;
-            }
-
-            RefreshSceneTree();
-            RefreshInspectorFromProject(InspectorRefreshTabPolicy.FollowSceneSelection);
-            InitializeUndoRedoHistory(resetStacks: true);
-
-            _currentProjectFilePath = Path.GetFullPath(path);
-            UpdateWindowTitleForProject();
-            KnobProjectFileStore.MarkRecentProject(_currentProjectFilePath);
-            return true;
         }
 
         private bool TrySaveProjectToFile(string path, out string error)
@@ -134,6 +144,7 @@ namespace KnobForge.App.Views
             _currentProjectFilePath = fullPath;
             UpdateWindowTitleForProject();
             KnobProjectFileStore.MarkRecentProject(_currentProjectFilePath);
+            RefreshNativeMenuBar();
             return true;
         }
 
