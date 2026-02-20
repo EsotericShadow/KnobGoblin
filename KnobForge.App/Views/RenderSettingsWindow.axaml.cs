@@ -32,6 +32,8 @@ namespace KnobForge.App.Views
         private readonly ViewportCameraState _cameraState;
         private readonly MetalViewport? _gpuViewport;
         private readonly Control _settingsPanel;
+        private readonly ComboBox _outputStrategyComboBox;
+        private readonly TextBlock _outputStrategyDescriptionTextBlock;
         private readonly TextBox _frameCountTextBox;
         private readonly ComboBox _resolutionComboBox;
         private readonly ComboBox _supersampleComboBox;
@@ -49,9 +51,11 @@ namespace KnobForge.App.Views
         private readonly ProgressBar _exportProgressBar;
         private readonly TextBlock _statusTextBlock;
         private readonly TextBlock _scratchParityNoteTextBlock;
+        private readonly OutputStrategyOption[] _outputStrategyOptions;
 
         private CancellationTokenSource? _exportCts;
         private bool _isRendering;
+        private bool _isApplyingOutputStrategy;
         private bool CanUseGpuExport => _gpuViewport?.CanRenderOffscreen == true;
 
         public RenderSettingsWindow()
@@ -74,6 +78,10 @@ namespace KnobForge.App.Views
 
             _settingsPanel = this.FindControl<Control>("SettingsPanel")
                 ?? throw new InvalidOperationException("SettingsPanel not found.");
+            _outputStrategyComboBox = this.FindControl<ComboBox>("OutputStrategyComboBox")
+                ?? throw new InvalidOperationException("OutputStrategyComboBox not found.");
+            _outputStrategyDescriptionTextBlock = this.FindControl<TextBlock>("OutputStrategyDescriptionTextBlock")
+                ?? throw new InvalidOperationException("OutputStrategyDescriptionTextBlock not found.");
             _frameCountTextBox = this.FindControl<TextBox>("FrameCountTextBox")
                 ?? throw new InvalidOperationException("FrameCountTextBox not found.");
             _resolutionComboBox = this.FindControl<ComboBox>("ResolutionComboBox")
@@ -109,17 +117,16 @@ namespace KnobForge.App.Views
             _scratchParityNoteTextBlock = this.FindControl<TextBlock>("ScratchParityNoteTextBlock")
                 ?? throw new InvalidOperationException("ScratchParityNoteTextBlock not found.");
 
-            _resolutionComboBox.ItemsSource = new[] { "256", "512", "1024", "2048" };
-            _resolutionComboBox.SelectedItem = "512";
+            _outputStrategyOptions = BuildOutputStrategyOptions();
+            _outputStrategyComboBox.ItemsSource = _outputStrategyOptions;
+
+            _resolutionComboBox.ItemsSource = new[] { "128", "192", "256", "384", "512", "1024", "2048" };
 
             _supersampleComboBox.ItemsSource = new[] { "1", "2", "3", "4" };
-            _supersampleComboBox.SelectedItem = "2";
 
             _spritesheetLayoutComboBox.ItemsSource = Enum.GetValues<SpritesheetLayout>();
-            _spritesheetLayoutComboBox.SelectedItem = SpritesheetLayout.Horizontal;
 
             _filterPresetComboBox.ItemsSource = Enum.GetValues<ExportFilterPreset>();
-            _filterPresetComboBox.SelectedItem = ExportFilterPreset.None;
 
             _outputFolderTextBox.Text = GetDefaultOutputFolder();
             _exportProgressBar.Value = 0d;
@@ -128,14 +135,79 @@ namespace KnobForge.App.Views
                 ? "Idle."
                 : "GPU offscreen rendering is unavailable. Export is GPU-only.";
 
+            _outputStrategyComboBox.SelectionChanged += OnOutputStrategySelectionChanged;
             _browseOutputButton.Click += OnBrowseOutputButtonClick;
             _startRenderButton.Click += OnStartRenderButtonClick;
             _cancelButton.Click += OnCancelButtonClick;
             _exportSpritesheetCheckBox.IsCheckedChanged += OnExportSpritesheetCheckedChanged;
             Closing += OnWindowClosing;
 
+            ApplyOutputStrategy(ExportOutputStrategies.Get(ExportOutputStrategy.JuceFilmstripBestDefault));
             UpdateSpritesheetLayoutEnabled();
             _startRenderButton.IsEnabled = CanUseGpuExport;
+        }
+
+        private static OutputStrategyOption[] BuildOutputStrategyOptions()
+        {
+            var definitions = ExportOutputStrategies.All;
+            OutputStrategyOption[] options = new OutputStrategyOption[definitions.Count];
+            for (int i = 0; i < definitions.Count; i++)
+            {
+                options[i] = new OutputStrategyOption(definitions[i]);
+            }
+
+            return options;
+        }
+
+        private void OnOutputStrategySelectionChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (_isApplyingOutputStrategy)
+            {
+                return;
+            }
+
+            if (_outputStrategyComboBox.SelectedItem is OutputStrategyOption option)
+            {
+                ApplyOutputStrategy(option.Definition);
+            }
+        }
+
+        private void ApplyOutputStrategy(ExportOutputStrategyDefinition definition)
+        {
+            _isApplyingOutputStrategy = true;
+            try
+            {
+                for (int i = 0; i < _outputStrategyOptions.Length; i++)
+                {
+                    if (_outputStrategyOptions[i].Definition.Strategy == definition.Strategy)
+                    {
+                        _outputStrategyComboBox.SelectedItem = _outputStrategyOptions[i];
+                        break;
+                    }
+                }
+
+                string frameCountText = definition.FrameCount.ToString(CultureInfo.InvariantCulture);
+                string resolutionText = definition.Resolution.ToString(CultureInfo.InvariantCulture);
+                string supersampleText = definition.SupersampleScale.ToString(CultureInfo.InvariantCulture);
+
+                _frameCountTextBox.Text = frameCountText;
+                _resolutionComboBox.SelectedItem = resolutionText;
+                _resolutionComboBox.Text = resolutionText;
+                _supersampleComboBox.SelectedItem = supersampleText;
+                _supersampleComboBox.Text = supersampleText;
+                _paddingTextBox.Text = definition.Padding.ToString("0.###", CultureInfo.InvariantCulture);
+                _cameraDistanceScaleTextBox.Text = definition.CameraDistanceScale.ToString("0.###", CultureInfo.InvariantCulture);
+                _spritesheetLayoutComboBox.SelectedItem = definition.SpritesheetLayout;
+                _filterPresetComboBox.SelectedItem = definition.FilterPreset;
+                _exportFramesCheckBox.IsChecked = definition.ExportIndividualFrames;
+                _exportSpritesheetCheckBox.IsChecked = definition.ExportSpritesheet;
+                _outputStrategyDescriptionTextBlock.Text = definition.Description;
+            }
+            finally
+            {
+                _isApplyingOutputStrategy = false;
+                UpdateSpritesheetLayoutEnabled();
+            }
         }
 
         private static string GetDefaultOutputFolder()
@@ -430,8 +502,13 @@ namespace KnobForge.App.Views
             var selectedFilter = _filterPresetComboBox.SelectedItem as ExportFilterPreset?;
             ExportFilterPreset filterPreset = selectedFilter ?? ExportFilterPreset.None;
 
+            ExportOutputStrategy strategy = _outputStrategyComboBox.SelectedItem is OutputStrategyOption option
+                ? option.Definition.Strategy
+                : ExportOutputStrategy.JuceFilmstripBestDefault;
+
             settings = new KnobExportSettings
             {
+                Strategy = strategy,
                 FrameCount = frameCount,
                 Resolution = resolution,
                 SupersampleScale = supersampleScale,
@@ -444,6 +521,21 @@ namespace KnobForge.App.Views
             };
 
             return true;
+        }
+
+        private sealed class OutputStrategyOption
+        {
+            public OutputStrategyOption(ExportOutputStrategyDefinition definition)
+            {
+                Definition = definition;
+            }
+
+            public ExportOutputStrategyDefinition Definition { get; }
+
+            public override string ToString()
+            {
+                return Definition.DisplayName;
+            }
         }
 
         private static bool TryParseInt(

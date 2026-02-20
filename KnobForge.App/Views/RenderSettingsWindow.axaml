@@ -31,74 +31,89 @@
                 </Border>
 
                 <Grid ColumnDefinitions="180,*"
-                      RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                      RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
                       RowSpacing="8">
                     <TextBlock Grid.Row="0"
                                Grid.Column="0"
                                VerticalAlignment="Center"
-                               Text="Frame Count"/>
-                    <TextBox x:Name="FrameCountTextBox"
-                             Grid.Row="0"
-                             Grid.Column="1"
-                             Text="360"/>
+                               Text="Output Strategy"/>
+                    <ComboBox x:Name="OutputStrategyComboBox"
+                              Grid.Row="0"
+                              Grid.Column="1"/>
 
-                    <TextBlock Grid.Row="1"
-                               Grid.Column="0"
-                               VerticalAlignment="Center"
-                               Text="Resolution"/>
-                    <ComboBox x:Name="ResolutionComboBox"
-                              Grid.Row="1"
-                              Grid.Column="1"
-                              IsEditable="True"/>
+                    <TextBlock x:Name="OutputStrategyDescriptionTextBlock"
+                               Grid.Row="1"
+                               Grid.Column="1"
+                               TextWrapping="Wrap"
+                               FontSize="11"
+                               Foreground="#B9C6D3"/>
 
                     <TextBlock Grid.Row="2"
                                Grid.Column="0"
                                VerticalAlignment="Center"
-                               Text="Supersampling"/>
-                    <ComboBox x:Name="SupersampleComboBox"
-                              Grid.Row="2"
-                              Grid.Column="1"/>
+                               Text="Frame Count"/>
+                    <TextBox x:Name="FrameCountTextBox"
+                             Grid.Row="2"
+                             Grid.Column="1"
+                             Text="360"/>
 
                     <TextBlock Grid.Row="3"
                                Grid.Column="0"
                                VerticalAlignment="Center"
-                               Text="Padding"/>
-                    <TextBox x:Name="PaddingTextBox"
-                             Grid.Row="3"
-                             Grid.Column="1"
-                             Text="0"/>
+                               Text="Resolution"/>
+                    <ComboBox x:Name="ResolutionComboBox"
+                              Grid.Row="3"
+                              Grid.Column="1"
+                              IsEditable="True"/>
 
                     <TextBlock Grid.Row="4"
                                Grid.Column="0"
                                VerticalAlignment="Center"
-                               Text="Camera Distance Scale"/>
-                    <TextBox x:Name="CameraDistanceScaleTextBox"
-                             Grid.Row="4"
-                             Grid.Column="1"
-                             Text="6.0"/>
+                               Text="Supersampling"/>
+                    <ComboBox x:Name="SupersampleComboBox"
+                              Grid.Row="4"
+                              Grid.Column="1"/>
 
                     <TextBlock Grid.Row="5"
                                Grid.Column="0"
                                VerticalAlignment="Center"
-                               Text="Filter Preset"/>
-                    <ComboBox x:Name="FilterPresetComboBox"
-                              Grid.Row="5"
-                              Grid.Column="1"/>
+                               Text="Padding"/>
+                    <TextBox x:Name="PaddingTextBox"
+                             Grid.Row="5"
+                             Grid.Column="1"
+                             Text="0"/>
 
                     <TextBlock Grid.Row="6"
                                Grid.Column="0"
                                VerticalAlignment="Center"
-                               Text="Base Name"/>
-                    <TextBox x:Name="BaseNameTextBox"
+                               Text="Camera Distance Scale"/>
+                    <TextBox x:Name="CameraDistanceScaleTextBox"
                              Grid.Row="6"
                              Grid.Column="1"
-                             Text="KnobA"/>
+                             Text="6.0"/>
 
                     <TextBlock Grid.Row="7"
                                Grid.Column="0"
                                VerticalAlignment="Center"
+                               Text="Filter Preset"/>
+                    <ComboBox x:Name="FilterPresetComboBox"
+                              Grid.Row="7"
+                              Grid.Column="1"/>
+
+                    <TextBlock Grid.Row="8"
+                               Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="Base Name"/>
+                    <TextBox x:Name="BaseNameTextBox"
+                             Grid.Row="8"
+                             Grid.Column="1"
+                             Text="KnobA"/>
+
+                    <TextBlock Grid.Row="9"
+                               Grid.Column="0"
+                               VerticalAlignment="Center"
                                Text="Output Folder"/>
-                    <Grid Grid.Row="7"
+                    <Grid Grid.Row="9"
                           Grid.Column="1"
                           ColumnDefinitions="*,Auto"
                           ColumnSpacing="8">
@@ -111,31 +126,31 @@
                                 MinWidth="86"/>
                     </Grid>
 
-                    <TextBlock Grid.Row="8"
+                    <TextBlock Grid.Row="10"
                                Grid.Column="0"
                                VerticalAlignment="Center"
                                Text="Spritesheet Layout"/>
                     <ComboBox x:Name="SpritesheetLayoutComboBox"
-                              Grid.Row="8"
+                              Grid.Row="10"
                               Grid.Column="1"/>
 
-                    <TextBlock Grid.Row="9"
+                    <TextBlock Grid.Row="11"
                                Grid.Column="0"
                                VerticalAlignment="Center"
                                Text="Export Frames"/>
                     <CheckBox x:Name="ExportFramesCheckBox"
-                              Grid.Row="9"
+                              Grid.Row="11"
                               Grid.Column="1"
                               IsChecked="True"
                               VerticalAlignment="Center"
                               Content="Save individual PNG frames"/>
 
-                    <TextBlock Grid.Row="10"
+                    <TextBlock Grid.Row="12"
                                Grid.Column="0"
                                VerticalAlignment="Center"
                                Text="Export Spritesheet"/>
                     <CheckBox x:Name="ExportSpritesheetCheckBox"
-                              Grid.Row="10"
+                              Grid.Row="12"
                               Grid.Column="1"
                               IsChecked="False"
                               VerticalAlignment="Center"
