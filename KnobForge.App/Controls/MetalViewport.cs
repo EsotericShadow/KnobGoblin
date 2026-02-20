@@ -162,6 +162,15 @@ namespace KnobForge.App.Controls
         private IntPtr _paintStampPipelineScratch;
         private IntPtr _paintStampPipelineErase;
         private IntPtr _paintStampPipelineColor;
+        private IntPtr _paintPickLibrary;
+        private IntPtr _paintPickVertexFunction;
+        private IntPtr _paintPickFragmentFunction;
+        private IntPtr _paintPickPipeline;
+        private IntPtr _paintPickDepthStencilState;
+        private IntPtr _paintPickTexture;
+        private IntPtr _paintPickDepthTexture;
+        private nuint _paintPickTextureWidth;
+        private nuint _paintPickTextureHeight;
         private IntPtr _lightGizmoLibrary;
         private IntPtr _lightGizmoVertexFunction;
         private IntPtr _lightGizmoFragmentFunction;
@@ -203,6 +212,8 @@ namespace KnobForge.App.Controls
         private KeyModifiers _lastKnownModifiers;
         private bool _optionDepthRampActive;
         private PaintHitMode _lastPaintHitMode = PaintHitMode.Idle;
+        private bool _paintPickMapDirty = true;
+        private readonly byte[] _paintPickReadbackPixel = new byte[4];
         private readonly List<PaintStampCommand> _pendingPaintStampCommands = new();
         private readonly List<LightGizmoSnapshot> _lightGizmoSnapshots = new(16);
         private readonly List<ShadowPassConfig> _resolvedShadowPasses = new(MaxShadowPassLights);
@@ -241,10 +252,12 @@ namespace KnobForge.App.Controls
                 ReleasePaintMaskTexture();
                 ReleasePaintColorTexture();
                 ReleasePaintStampResources();
+                ReleasePaintPickResources();
                 ReleaseLightGizmoResources();
                 ReleaseUniformUploadScratchBuffers();
                 _paintMaskTextureVersion = -1;
                 _paintColorTextureNeedsClear = true;
+                _paintPickMapDirty = true;
                 _pendingPaintStampCommands.Clear();
                 _viewportCollarStateLogged = false;
                 _offscreenCollarStateLogged = false;
@@ -412,6 +425,11 @@ namespace KnobForge.App.Controls
         public void InvalidateGpu()
         {
             _dirty = true;
+            if (!_isPainting)
+            {
+                _paintPickMapDirty = true;
+            }
+
             if (_metalLayer != IntPtr.Zero)
             {
                 Render(_ => { });
@@ -797,10 +815,12 @@ namespace KnobForge.App.Controls
                 ReleasePaintMaskTexture();
                 ReleasePaintColorTexture();
                 ReleasePaintStampResources();
+                ReleasePaintPickResources();
                 ReleaseLightGizmoResources();
                 ReleaseUniformUploadScratchBuffers();
                 _paintMaskTextureVersion = -1;
                 _paintColorTextureNeedsClear = true;
+                _paintPickMapDirty = true;
                 _pendingPaintStampCommands.Clear();
 
                 ClearMeshResources();
@@ -817,6 +837,7 @@ namespace KnobForge.App.Controls
             Size arranged = base.ArrangeOverride(finalSize);
             UpdateDrawableSize(finalSize);
             _dirty = true;
+            _paintPickMapDirty = true;
             return arranged;
         }
 
@@ -1031,9 +1052,10 @@ namespace KnobForge.App.Controls
         {
             ReplaceMeshResources(ref _meshResources, null);
             ReplaceMeshResources(ref _collarResources, null);
+            _paintPickMapDirty = true;
         }
 
-        private static void ReplaceMeshResources(ref MetalMeshGpuResources? target, MetalMeshGpuResources? replacement)
+        private void ReplaceMeshResources(ref MetalMeshGpuResources? target, MetalMeshGpuResources? replacement)
         {
             if (ReferenceEquals(target, replacement))
             {
@@ -1042,6 +1064,7 @@ namespace KnobForge.App.Controls
 
             target?.Dispose();
             target = replacement;
+            _paintPickMapDirty = true;
         }
 
         private void RefreshMeshResources(KnobProject? project, ModelNode? modelNode)
@@ -1169,6 +1192,9 @@ namespace KnobForge.App.Controls
                 boundsMax = Vector3.Max(boundsMax, p);
             }
 
+            uint[] indicesCopy = indices.ToArray();
+            CpuTriangleBvh bvh = CpuTriangleBvh.Build(positions, indicesCopy);
+
             return new MetalMeshGpuResources
             {
                 VertexBuffer = vertexBuffer,
@@ -1177,9 +1203,10 @@ namespace KnobForge.App.Controls
                 IndexType = MTLIndexType.UInt32,
                 ReferenceRadius = referenceRadius,
                 Positions = positions,
-                Indices = indices.ToArray(),
+                Indices = indicesCopy,
                 BoundsMin = boundsMin,
-                BoundsMax = boundsMax
+                BoundsMax = boundsMax,
+                Bvh = bvh
             };
         }
 
@@ -3679,6 +3706,31 @@ namespace KnobForge.App.Controls
                 : _meshResources.ReferenceRadius;
             referenceRadius = MathF.Max(1f, referenceRadius);
 
+            if (TryMapPointerToPaintUvGpu(pointerDip, modelNode, collarNode, drawCollar, referenceRadius, out Vector2 gpuUv))
+            {
+                uv = gpuUv;
+                _lastPaintHitMode = PaintHitMode.MeshHit;
+                return true;
+            }
+
+            if (!TryMapPointerToPaintUvCpu(pointerDip, modelNode, collarNode, drawCollar, referenceRadius, out uv))
+            {
+                _lastPaintHitMode = PaintHitMode.Idle;
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool TryMapPointerToPaintUvCpu(
+            Point pointerDip,
+            ModelNode modelNode,
+            CollarNode? collarNode,
+            bool drawCollar,
+            float referenceRadius,
+            out Vector2 uv)
+        {
+            uv = default;
             SKPoint screenPoint = DipToScreen(pointerDip);
             if (!TryBuildPointerRay(screenPoint, referenceRadius, out Vector3 rayOrigin, out Vector3 rayDirection))
             {
@@ -3793,16 +3845,54 @@ namespace KnobForge.App.Controls
             Vector3 rayOriginLocal = RotateToLocalXY(rayOriginWorld, cosA, sinA);
             Vector3 rayDirectionLocal = RotateToLocalXY(rayDirectionWorld, cosA, sinA);
 
-            if (!TryIntersectRayAabb(rayOriginLocal, rayDirectionLocal, mesh.BoundsMin, mesh.BoundsMax))
+            if (!TryIntersectRayAabb(rayOriginLocal, rayDirectionLocal, mesh.BoundsMin, mesh.BoundsMax, out _, out _))
             {
                 return false;
             }
 
+            if (mesh.Bvh.TryIntersect(
+                    rayOriginLocal,
+                    rayDirectionLocal,
+                    mesh.Positions,
+                    mesh.Indices,
+                    out localHitPoint,
+                    out hitT,
+                    out bool bvhTraversalCompleted))
+            {
+                return true;
+            }
+
+            if (bvhTraversalCompleted)
+            {
+                return false;
+            }
+
+            if (!TryIntersectMeshBruteForce(
+                    rayOriginLocal,
+                    rayDirectionLocal,
+                    mesh.Positions,
+                    mesh.Indices,
+                    out localHitPoint,
+                    out hitT))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryIntersectMeshBruteForce(
+            Vector3 rayOrigin,
+            Vector3 rayDirection,
+            Vector3[] positions,
+            uint[] indices,
+            out Vector3 localHitPoint,
+            out float hitT)
+        {
+            localHitPoint = default;
+            hitT = float.MaxValue;
             bool hit = false;
             float bestT = float.MaxValue;
-            Vector3 bestPoint = default;
-            Vector3[] positions = mesh.Positions;
-            uint[] indices = mesh.Indices;
             for (int i = 0; i + 2 < indices.Length; i += 3)
             {
                 int i0 = (int)indices[i];
@@ -3816,7 +3906,7 @@ namespace KnobForge.App.Controls
                 Vector3 p0 = positions[i0];
                 Vector3 p1 = positions[i1];
                 Vector3 p2 = positions[i2];
-                if (!TryIntersectRayTriangle(rayOriginLocal, rayDirectionLocal, p0, p1, p2, out float t))
+                if (!TryIntersectRayTriangle(rayOrigin, rayDirection, p0, p1, p2, out float t))
                 {
                     continue;
                 }
@@ -3828,7 +3918,6 @@ namespace KnobForge.App.Controls
 
                 hit = true;
                 bestT = t;
-                bestPoint = rayOriginLocal + (rayDirectionLocal * t);
             }
 
             if (!hit)
@@ -3836,8 +3925,8 @@ namespace KnobForge.App.Controls
                 return false;
             }
 
-            localHitPoint = bestPoint;
             hitT = bestT;
+            localHitPoint = rayOrigin + (rayDirection * bestT);
             return true;
         }
 
@@ -3849,11 +3938,17 @@ namespace KnobForge.App.Controls
                 worldValue.Z);
         }
 
-        private static bool TryIntersectRayAabb(Vector3 rayOrigin, Vector3 rayDirection, Vector3 boundsMin, Vector3 boundsMax)
+        private static bool TryIntersectRayAabb(
+            Vector3 rayOrigin,
+            Vector3 rayDirection,
+            Vector3 boundsMin,
+            Vector3 boundsMax,
+            out float tMin,
+            out float tMax)
         {
             const float epsilon = 1e-8f;
-            float tMin = 0f;
-            float tMax = float.MaxValue;
+            tMin = 0f;
+            tMax = float.MaxValue;
 
             if (!TryIntersectRayAabbAxis(rayOrigin.X, rayDirection.X, boundsMin.X, boundsMax.X, ref tMin, ref tMax, epsilon) ||
                 !TryIntersectRayAabbAxis(rayOrigin.Y, rayDirection.Y, boundsMin.Y, boundsMax.Y, ref tMin, ref tMax, epsilon) ||
@@ -5020,6 +5115,440 @@ fragment float4 fragment_light_gizmo_overlay(
             float Weight,
             float Planar);
 
+        private sealed class CpuTriangleBvh
+        {
+            private const int LeafTriangleThreshold = 12;
+            private const int MaxTraversalStackDepth = 128;
+            private static readonly CpuTriangleBvh Empty = new(Array.Empty<BvhNode>(), Array.Empty<int>());
+            private readonly BvhNode[] _nodes;
+            private readonly int[] _triangleIndices;
+
+            private CpuTriangleBvh(BvhNode[] nodes, int[] triangleIndices)
+            {
+                _nodes = nodes;
+                _triangleIndices = triangleIndices;
+            }
+
+            public static CpuTriangleBvh Build(Vector3[] positions, uint[] indices)
+            {
+                int triangleCount = indices.Length / 3;
+                if (triangleCount <= 0 || positions.Length == 0)
+                {
+                    return Empty;
+                }
+
+                var triangleIndices = new int[triangleCount];
+                for (int i = 0; i < triangleCount; i++)
+                {
+                    triangleIndices[i] = i;
+                }
+
+                var nodes = new List<BvhNode>(Math.Max(1, (triangleCount / LeafTriangleThreshold) * 2));
+                BuildNode(nodes, triangleIndices, 0, triangleCount, positions, indices);
+                return new CpuTriangleBvh(nodes.ToArray(), triangleIndices);
+            }
+
+            public bool TryIntersect(
+                Vector3 rayOrigin,
+                Vector3 rayDirection,
+                Vector3[] positions,
+                uint[] indices,
+                out Vector3 hitPoint,
+                out float hitT,
+                out bool traversalCompleted)
+            {
+                hitPoint = default;
+                hitT = float.MaxValue;
+                traversalCompleted = true;
+                if (_nodes.Length == 0)
+                {
+                    return false;
+                }
+
+                Span<int> nodeStack = stackalloc int[MaxTraversalStackDepth];
+                int stackSize = 0;
+                nodeStack[stackSize++] = 0;
+
+                bool hit = false;
+                float bestT = float.MaxValue;
+                Vector3 bestPoint = default;
+
+                while (stackSize > 0)
+                {
+                    int nodeIndex = nodeStack[--stackSize];
+                    ref readonly BvhNode node = ref _nodes[nodeIndex];
+                    if (!TryIntersectRayAabb(
+                            rayOrigin,
+                            rayDirection,
+                            node.BoundsMin,
+                            node.BoundsMax,
+                            out float nodeTMin,
+                            out _) ||
+                        nodeTMin > bestT)
+                    {
+                        continue;
+                    }
+
+                    if (node.IsLeaf)
+                    {
+                        int leafEnd = node.TriangleStart + node.TriangleCount;
+                        for (int triCursor = node.TriangleStart; triCursor < leafEnd; triCursor++)
+                        {
+                            int triangleIndex = _triangleIndices[triCursor];
+                            int baseIndex = triangleIndex * 3;
+                            if ((uint)(baseIndex + 2) >= (uint)indices.Length)
+                            {
+                                continue;
+                            }
+
+                            int i0 = (int)indices[baseIndex];
+                            int i1 = (int)indices[baseIndex + 1];
+                            int i2 = (int)indices[baseIndex + 2];
+                            if ((uint)i0 >= positions.Length || (uint)i1 >= positions.Length || (uint)i2 >= positions.Length)
+                            {
+                                continue;
+                            }
+
+                            Vector3 p0 = positions[i0];
+                            Vector3 p1 = positions[i1];
+                            Vector3 p2 = positions[i2];
+                            if (!TryIntersectRayTriangle(rayOrigin, rayDirection, p0, p1, p2, out float t))
+                            {
+                                continue;
+                            }
+
+                            if (t <= 1e-5f || t >= bestT)
+                            {
+                                continue;
+                            }
+
+                            hit = true;
+                            bestT = t;
+                            bestPoint = rayOrigin + (rayDirection * t);
+                        }
+
+                        continue;
+                    }
+
+                    int leftChild = node.LeftChildIndex;
+                    int rightChild = node.RightChildIndex;
+                    bool leftHit = false;
+                    bool rightHit = false;
+                    float leftTMin = float.MaxValue;
+                    float rightTMin = float.MaxValue;
+
+                    if ((uint)leftChild < (uint)_nodes.Length)
+                    {
+                        ref readonly BvhNode leftNode = ref _nodes[leftChild];
+                        leftHit = TryIntersectRayAabb(
+                            rayOrigin,
+                            rayDirection,
+                            leftNode.BoundsMin,
+                            leftNode.BoundsMax,
+                            out leftTMin,
+                            out _) && leftTMin <= bestT;
+                    }
+
+                    if ((uint)rightChild < (uint)_nodes.Length)
+                    {
+                        ref readonly BvhNode rightNode = ref _nodes[rightChild];
+                        rightHit = TryIntersectRayAabb(
+                            rayOrigin,
+                            rayDirection,
+                            rightNode.BoundsMin,
+                            rightNode.BoundsMax,
+                            out rightTMin,
+                            out _) && rightTMin <= bestT;
+                    }
+
+                    if (leftHit && rightHit)
+                    {
+                        if (stackSize + 2 > nodeStack.Length)
+                        {
+                            traversalCompleted = false;
+                            return false;
+                        }
+
+                        if (leftTMin <= rightTMin)
+                        {
+                            nodeStack[stackSize++] = rightChild;
+                            nodeStack[stackSize++] = leftChild;
+                        }
+                        else
+                        {
+                            nodeStack[stackSize++] = leftChild;
+                            nodeStack[stackSize++] = rightChild;
+                        }
+                    }
+                    else if (leftHit)
+                    {
+                        if (stackSize + 1 > nodeStack.Length)
+                        {
+                            traversalCompleted = false;
+                            return false;
+                        }
+
+                        nodeStack[stackSize++] = leftChild;
+                    }
+                    else if (rightHit)
+                    {
+                        if (stackSize + 1 > nodeStack.Length)
+                        {
+                            traversalCompleted = false;
+                            return false;
+                        }
+
+                        nodeStack[stackSize++] = rightChild;
+                    }
+                }
+
+                if (!hit)
+                {
+                    return false;
+                }
+
+                hitPoint = bestPoint;
+                hitT = bestT;
+                return true;
+            }
+
+            private static int BuildNode(
+                List<BvhNode> nodes,
+                int[] triangleIndices,
+                int start,
+                int count,
+                Vector3[] positions,
+                uint[] indices)
+            {
+                ComputeBounds(
+                    triangleIndices,
+                    start,
+                    count,
+                    positions,
+                    indices,
+                    out Vector3 boundsMin,
+                    out Vector3 boundsMax,
+                    out Vector3 centroidMin,
+                    out Vector3 centroidMax);
+
+                int nodeIndex = nodes.Count;
+                nodes.Add(default);
+
+                if (count <= LeafTriangleThreshold)
+                {
+                    nodes[nodeIndex] = BvhNode.CreateLeaf(boundsMin, boundsMax, start, count);
+                    return nodeIndex;
+                }
+
+                Vector3 centroidExtent = centroidMax - centroidMin;
+                int splitAxis = 0;
+                float splitAxisExtent = centroidExtent.X;
+                if (centroidExtent.Y > splitAxisExtent)
+                {
+                    splitAxis = 1;
+                    splitAxisExtent = centroidExtent.Y;
+                }
+
+                if (centroidExtent.Z > splitAxisExtent)
+                {
+                    splitAxis = 2;
+                    splitAxisExtent = centroidExtent.Z;
+                }
+
+                if (splitAxisExtent <= 1e-6f)
+                {
+                    nodes[nodeIndex] = BvhNode.CreateLeaf(boundsMin, boundsMax, start, count);
+                    return nodeIndex;
+                }
+
+                float splitValue = splitAxis switch
+                {
+                    0 => centroidMin.X + (splitAxisExtent * 0.5f),
+                    1 => centroidMin.Y + (splitAxisExtent * 0.5f),
+                    _ => centroidMin.Z + (splitAxisExtent * 0.5f)
+                };
+
+                int split = PartitionTrianglesByAxis(
+                    triangleIndices,
+                    start,
+                    count,
+                    positions,
+                    indices,
+                    splitAxis,
+                    splitValue);
+
+                if (split <= start || split >= start + count)
+                {
+                    split = start + (count / 2);
+                }
+
+                int leftCount = split - start;
+                int rightCount = count - leftCount;
+                if (leftCount <= 0 || rightCount <= 0)
+                {
+                    nodes[nodeIndex] = BvhNode.CreateLeaf(boundsMin, boundsMax, start, count);
+                    return nodeIndex;
+                }
+
+                int leftChild = BuildNode(nodes, triangleIndices, start, leftCount, positions, indices);
+                int rightChild = BuildNode(nodes, triangleIndices, split, rightCount, positions, indices);
+
+                nodes[nodeIndex] = BvhNode.CreateInternal(boundsMin, boundsMax, leftChild, rightChild);
+                return nodeIndex;
+            }
+
+            private static void ComputeBounds(
+                int[] triangleIndices,
+                int start,
+                int count,
+                Vector3[] positions,
+                uint[] indices,
+                out Vector3 boundsMin,
+                out Vector3 boundsMax,
+                out Vector3 centroidMin,
+                out Vector3 centroidMax)
+            {
+                boundsMin = new Vector3(float.MaxValue);
+                boundsMax = new Vector3(float.MinValue);
+                centroidMin = new Vector3(float.MaxValue);
+                centroidMax = new Vector3(float.MinValue);
+                bool any = false;
+
+                int end = start + count;
+                for (int i = start; i < end; i++)
+                {
+                    int triangleIndex = triangleIndices[i];
+                    int baseIndex = triangleIndex * 3;
+                    if ((uint)(baseIndex + 2) >= (uint)indices.Length)
+                    {
+                        continue;
+                    }
+
+                    int i0 = (int)indices[baseIndex];
+                    int i1 = (int)indices[baseIndex + 1];
+                    int i2 = (int)indices[baseIndex + 2];
+                    if ((uint)i0 >= positions.Length || (uint)i1 >= positions.Length || (uint)i2 >= positions.Length)
+                    {
+                        continue;
+                    }
+
+                    Vector3 p0 = positions[i0];
+                    Vector3 p1 = positions[i1];
+                    Vector3 p2 = positions[i2];
+                    Vector3 triangleMin = Vector3.Min(Vector3.Min(p0, p1), p2);
+                    Vector3 triangleMax = Vector3.Max(Vector3.Max(p0, p1), p2);
+                    Vector3 centroid = (p0 + p1 + p2) * (1f / 3f);
+
+                    boundsMin = Vector3.Min(boundsMin, triangleMin);
+                    boundsMax = Vector3.Max(boundsMax, triangleMax);
+                    centroidMin = Vector3.Min(centroidMin, centroid);
+                    centroidMax = Vector3.Max(centroidMax, centroid);
+                    any = true;
+                }
+
+                if (!any)
+                {
+                    boundsMin = Vector3.Zero;
+                    boundsMax = Vector3.Zero;
+                    centroidMin = Vector3.Zero;
+                    centroidMax = Vector3.Zero;
+                }
+            }
+
+            private static int PartitionTrianglesByAxis(
+                int[] triangleIndices,
+                int start,
+                int count,
+                Vector3[] positions,
+                uint[] indices,
+                int axis,
+                float splitValue)
+            {
+                int i = start;
+                int j = start + count - 1;
+                while (i <= j)
+                {
+                    float centroid = GetTriangleCentroidAxis(triangleIndices[i], positions, indices, axis);
+                    if (centroid <= splitValue)
+                    {
+                        i++;
+                        continue;
+                    }
+
+                    (triangleIndices[i], triangleIndices[j]) = (triangleIndices[j], triangleIndices[i]);
+                    j--;
+                }
+
+                return i;
+            }
+
+            private static float GetTriangleCentroidAxis(
+                int triangleIndex,
+                Vector3[] positions,
+                uint[] indices,
+                int axis)
+            {
+                int baseIndex = triangleIndex * 3;
+                if ((uint)(baseIndex + 2) >= (uint)indices.Length)
+                {
+                    return 0f;
+                }
+
+                int i0 = (int)indices[baseIndex];
+                int i1 = (int)indices[baseIndex + 1];
+                int i2 = (int)indices[baseIndex + 2];
+                if ((uint)i0 >= positions.Length || (uint)i1 >= positions.Length || (uint)i2 >= positions.Length)
+                {
+                    return 0f;
+                }
+
+                Vector3 centroid = (positions[i0] + positions[i1] + positions[i2]) * (1f / 3f);
+                return axis switch
+                {
+                    0 => centroid.X,
+                    1 => centroid.Y,
+                    _ => centroid.Z
+                };
+            }
+
+            private readonly struct BvhNode
+            {
+                private BvhNode(
+                    Vector3 boundsMin,
+                    Vector3 boundsMax,
+                    int leftChildIndex,
+                    int rightChildIndex,
+                    int triangleStart,
+                    int triangleCount)
+                {
+                    BoundsMin = boundsMin;
+                    BoundsMax = boundsMax;
+                    LeftChildIndex = leftChildIndex;
+                    RightChildIndex = rightChildIndex;
+                    TriangleStart = triangleStart;
+                    TriangleCount = triangleCount;
+                }
+
+                public Vector3 BoundsMin { get; }
+                public Vector3 BoundsMax { get; }
+                public int LeftChildIndex { get; }
+                public int RightChildIndex { get; }
+                public int TriangleStart { get; }
+                public int TriangleCount { get; }
+                public bool IsLeaf => TriangleCount > 0;
+
+                public static BvhNode CreateLeaf(Vector3 boundsMin, Vector3 boundsMax, int triangleStart, int triangleCount)
+                {
+                    return new BvhNode(boundsMin, boundsMax, -1, -1, triangleStart, triangleCount);
+                }
+
+                public static BvhNode CreateInternal(Vector3 boundsMin, Vector3 boundsMax, int leftChildIndex, int rightChildIndex)
+                {
+                    return new BvhNode(boundsMin, boundsMax, leftChildIndex, rightChildIndex, 0, 0);
+                }
+            }
+        }
+
         private sealed class MetalMeshGpuResources : IDisposable
         {
             private bool _disposed;
@@ -5033,6 +5562,7 @@ fragment float4 fragment_light_gizmo_overlay(
             public required uint[] Indices { get; init; }
             public required Vector3 BoundsMin { get; init; }
             public required Vector3 BoundsMax { get; init; }
+            public required CpuTriangleBvh Bvh { get; init; }
 
             public void Dispose()
             {
@@ -5054,124 +5584,98 @@ fragment float4 fragment_light_gizmo_overlay(
             OrbitView
         }
 
-        private static class ObjC
+        public void Dispose()
         {
-            [DllImport("/usr/lib/libobjc.A.dylib")]
-            public static extern IntPtr objc_getClass(string name);
-
-            [DllImport("/usr/lib/libobjc.A.dylib")]
-            public static extern IntPtr sel_registerName(string name);
-
-            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
-            public static extern IntPtr IntPtr_objc_msgSend(IntPtr receiver, IntPtr selector);
-
-            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
-            public static extern IntPtr IntPtr_objc_msgSend_IntPtr(IntPtr receiver, IntPtr selector, IntPtr arg1);
-
-            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
-            public static extern IntPtr IntPtr_objc_msgSend_UInt(IntPtr receiver, IntPtr selector, nuint index);
-
-            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
-            public static extern IntPtr IntPtr_objc_msgSend_UInt_UInt_UInt_Bool(
-                IntPtr receiver,
-                IntPtr selector,
-                nuint arg1,
-                nuint arg2,
-                nuint arg3,
-                bool arg4);
-
-            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
-            public static extern IntPtr IntPtr_objc_msgSend_IntPtr_outIntPtr(
-                IntPtr receiver,
-                IntPtr selector,
-                IntPtr arg1,
-                out IntPtr arg2);
-
-            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
-            public static extern IntPtr IntPtr_objc_msgSend_IntPtr_IntPtr_outIntPtr(
-                IntPtr receiver,
-                IntPtr selector,
-                IntPtr arg1,
-                IntPtr arg2,
-                out IntPtr arg3);
-
-            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
-            public static extern nuint UInt_objc_msgSend(IntPtr receiver, IntPtr selector);
-
-            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
-            public static extern void Void_objc_msgSend(IntPtr receiver, IntPtr selector);
-
-            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
-            public static extern void Void_objc_msgSend_IntPtr(IntPtr receiver, IntPtr selector, IntPtr arg1);
-
-            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
-            public static extern void Void_objc_msgSend_IntPtr_UInt(
-                IntPtr receiver,
-                IntPtr selector,
-                IntPtr arg1,
-                nuint arg2);
-
-            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
-            public static extern void Void_objc_msgSend_UInt(IntPtr receiver, IntPtr selector, nuint arg1);
-
-            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
-            public static extern void Void_objc_msgSend_Bool(IntPtr receiver, IntPtr selector, bool arg1);
-
-            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
-            public static extern void Void_objc_msgSend_Double(IntPtr receiver, IntPtr selector, double arg1);
-
-            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
-            public static extern void Void_objc_msgSend_IntPtr_UInt_UInt(
-                IntPtr receiver,
-                IntPtr selector,
-                IntPtr arg1,
-                nuint arg2,
-                nuint arg3);
-
-            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
-            public static extern void Void_objc_msgSend_MTLRegion_UInt_IntPtr_UInt(
-                IntPtr receiver,
-                IntPtr selector,
-                MTLRegion region,
-                nuint arg2,
-                IntPtr arg3,
-                nuint arg4);
-
-            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
-            public static extern void Void_objc_msgSend_IntPtr_UInt_MTLRegion_UInt(
-                IntPtr receiver,
-                IntPtr selector,
-                IntPtr arg1,
-                nuint arg2,
-                MTLRegion arg3,
-                nuint arg4);
-
-            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
-            public static extern void Void_objc_msgSend_UInt_UInt_UInt_IntPtr_UInt(
-                IntPtr receiver,
-                IntPtr selector,
-                nuint arg1,
-                nuint arg2,
-                nuint arg3,
-                IntPtr arg4,
-                nuint arg5);
-
-            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
-            public static extern void Void_objc_msgSend_UInt_UInt_UInt(
-                IntPtr receiver,
-                IntPtr selector,
-                nuint arg1,
-                nuint arg2,
-                nuint arg3);
-
-            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
-            public static extern void Void_objc_msgSend_CGSize(IntPtr receiver, IntPtr selector, CGSize size);
-
-            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
-            public static extern void Void_objc_msgSend_CGRect(IntPtr receiver, IntPtr selector, CGRect rect);
-
-            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
-            public static extern void Void_objc_msgSend_MTLClearColor(IntPtr receiver, IntPtr selector, MTLClearColor color);
         }
     }
+    
+    #region Bounding Volume Hierarchy
+    
+    private readonly struct AABB
+    {
+        public readonly Vector3 Min;
+        public readonly Vector3 Max;
+
+        public AABB(Vector3 min, Vector3 max)
+        {
+            Min = min;
+            Max = max;
+        }
+
+        public static AABB FromTriangle(Vector3 v0, Vector3 v1, Vector3 v2)
+        {
+            var min = Vector3.Min(v0, Vector3.Min(v1, v2));
+            var max = Vector3.Max(v0, Vector3.Max(v1, v2));
+            return new AABB(min, max);
+        }
+
+        public static AABB Merge(AABB a, AABB b)
+        {
+            return new AABB(Vector3.Min(a.Min, b.Min), Vector3.Max(a.Max, b.Max));
+        }
+    }
+
+    private sealed class BvhNode
+    {
+        public AABB Bbox;
+        public int StartIndex;
+        public int PrimitiveCount;
+        public BvhNode? Left;
+        public BvhNode? Right;
+    }
+
+    private sealed class BoundingVolumeHierarchy
+    {
+        private BvhNode? _root;
+        private readonly List<int> _triangleIndices = new();
+
+        public void Build(List<Vector3> vertices, List<int> indices)
+        {
+            _triangleIndices.Clear();
+            var triangleAabbs = new List<(int index, AABB aabb)>();
+            for (int i = 0; i < indices.Count; i += 3)
+            {
+                int triIndex = i / 3;
+                var v0 = vertices[indices[i]];
+                var v1 = vertices[indices[i + 1]];
+                var v2 = vertices[indices[i + 2]];
+                triangleAabbs.Add((triIndex, AABB.FromTriangle(v0, v1, v2)));
+                _triangleIndices.Add(triIndex);
+            }
+
+            _root = BuildRecursive(triangleAabbs, 0, triangleAabbs.Count);
+        }
+
+        private BvhNode BuildRecursive(List<(int index, AABB aabb)> triangleAabbs, int start, int end)
+        {
+            var node = new BvhNode();
+            AABB bbox = triangleAabbs[start].aabb;
+            for (int i = start + 1; i < end; i++)
+            {
+                bbox = AABB.Merge(bbox, triangleAabbs[i].aabb);
+            }
+            node.Bbox = bbox;
+            node.StartIndex = start;
+            node.PrimitiveCount = end - start;
+
+            if (node.PrimitiveCount <= 4)
+            {
+                return node;
+            }
+
+            Vector3 extents = bbox.Max - bbox.Min;
+            int axis = extents.X > extents.Y ? (extents.X > extents.Z ? 0 : 2) : (extents.Y > extents.Z ? 1 : 2);
+
+            triangleAabbs.Sort(start, node.PrimitiveCount, Comparer<(int, AABB)>.Create((a, b) =>
+                (a.aabb.Min[axis] + a.aabb.Max[axis]).CompareTo(b.aabb.Min[axis] + b.aabb.Max[axis])));
+
+            int mid = start + node.PrimitiveCount / 2;
+            node.Left = BuildRecursive(triangleAabbs, start, mid);
+            node.Right = BuildRecursive(triangleAabbs, mid, end);
+
+            return node;
+        }
+    }
+
+    #endregion
 }
