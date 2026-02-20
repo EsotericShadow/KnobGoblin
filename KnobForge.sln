@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KnobForge.App", "KnobForge.App\KnobForge.App.csproj", "{A997378C-9E1C-4323-9A08-64D4D1B11BA0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KnobForge.Core", "KnobForge.Core\KnobForge.Core.csproj", "{A8BE17F4-CC41-4D5C-9DE5-3FB20A935B1E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KnobForge.Rendering", "KnobForge.Rendering\KnobForge.Rendering.csproj", "{D5D4BA61-D7D7-4192-8492-89AA6760E22B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KnobForge.Tools", "KnobForge.Tools\KnobForge.Tools.csproj", "{BF100C00-9AA7-49C6-8896-4FD5398F7CD9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KnobForge.IO", "KnobForge.IO\KnobForge.IO.csproj", "{66D09F59-C004-46F5-A088-C1EF6EE728C5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A997378C-9E1C-4323-9A08-64D4D1B11BA0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A997378C-9E1C-4323-9A08-64D4D1B11BA0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A997378C-9E1C-4323-9A08-64D4D1B11BA0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A997378C-9E1C-4323-9A08-64D4D1B11BA0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A8BE17F4-CC41-4D5C-9DE5-3FB20A935B1E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A8BE17F4-CC41-4D5C-9DE5-3FB20A935B1E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A8BE17F4-CC41-4D5C-9DE5-3FB20A935B1E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A8BE17F4-CC41-4D5C-9DE5-3FB20A935B1E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5D4BA61-D7D7-4192-8492-89AA6760E22B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5D4BA61-D7D7-4192-8492-89AA6760E22B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5D4BA61-D7D7-4192-8492-89AA6760E22B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5D4BA61-D7D7-4192-8492-89AA6760E22B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF100C00-9AA7-49C6-8896-4FD5398F7CD9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF100C00-9AA7-49C6-8896-4FD5398F7CD9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF100C00-9AA7-49C6-8896-4FD5398F7CD9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF100C00-9AA7-49C6-8896-4FD5398F7CD9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{66D09F59-C004-46F5-A088-C1EF6EE728C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66D09F59-C004-46F5-A088-C1EF6EE728C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66D09F59-C004-46F5-A088-C1EF6EE728C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66D09F59-C004-46F5-A088-C1EF6EE728C5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

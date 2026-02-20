@@ -1,0 +1,172 @@
+<Window
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    x:Class="KnobForge.App.Views.RenderSettingsWindow"
+    Width="560"
+    Height="700"
+    MinWidth="520"
+    MinHeight="640"
+    Title="Render Settings"
+    CanResize="True">
+
+    <Grid RowDefinitions="*,Auto">
+        <ScrollViewer Grid.Row="0"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <StackPanel x:Name="SettingsPanel"
+                        Margin="16"
+                        Spacing="12">
+                <TextBlock Text="Render Settings"
+                           FontSize="20"
+                           FontWeight="SemiBold"/>
+                <Border Background="#20262E"
+                        BorderBrush="#3A4654"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="10,8">
+                    <TextBlock x:Name="ScratchParityNoteTextBlock"
+                               TextWrapping="Wrap"
+                               FontSize="11"
+                               Foreground="#C7D3DF"/>
+                </Border>
+
+                <Grid ColumnDefinitions="180,*"
+                      RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                      RowSpacing="8">
+                    <TextBlock Grid.Row="0"
+                               Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="Frame Count"/>
+                    <TextBox x:Name="FrameCountTextBox"
+                             Grid.Row="0"
+                             Grid.Column="1"
+                             Text="360"/>
+
+                    <TextBlock Grid.Row="1"
+                               Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="Resolution"/>
+                    <ComboBox x:Name="ResolutionComboBox"
+                              Grid.Row="1"
+                              Grid.Column="1"
+                              IsEditable="True"/>
+
+                    <TextBlock Grid.Row="2"
+                               Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="Supersampling"/>
+                    <ComboBox x:Name="SupersampleComboBox"
+                              Grid.Row="2"
+                              Grid.Column="1"/>
+
+                    <TextBlock Grid.Row="3"
+                               Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="Padding"/>
+                    <TextBox x:Name="PaddingTextBox"
+                             Grid.Row="3"
+                             Grid.Column="1"
+                             Text="0"/>
+
+                    <TextBlock Grid.Row="4"
+                               Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="Camera Distance Scale"/>
+                    <TextBox x:Name="CameraDistanceScaleTextBox"
+                             Grid.Row="4"
+                             Grid.Column="1"
+                             Text="6.0"/>
+
+                    <TextBlock Grid.Row="5"
+                               Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="Filter Preset"/>
+                    <ComboBox x:Name="FilterPresetComboBox"
+                              Grid.Row="5"
+                              Grid.Column="1"/>
+
+                    <TextBlock Grid.Row="6"
+                               Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="Base Name"/>
+                    <TextBox x:Name="BaseNameTextBox"
+                             Grid.Row="6"
+                             Grid.Column="1"
+                             Text="KnobA"/>
+
+                    <TextBlock Grid.Row="7"
+                               Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="Output Folder"/>
+                    <Grid Grid.Row="7"
+                          Grid.Column="1"
+                          ColumnDefinitions="*,Auto"
+                          ColumnSpacing="8">
+                        <TextBox x:Name="OutputFolderTextBox"
+                                 Grid.Column="0"
+                                 IsReadOnly="True"/>
+                        <Button x:Name="BrowseOutputButton"
+                                Grid.Column="1"
+                                Content="Browse..."
+                                MinWidth="86"/>
+                    </Grid>
+
+                    <TextBlock Grid.Row="8"
+                               Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="Spritesheet Layout"/>
+                    <ComboBox x:Name="SpritesheetLayoutComboBox"
+                              Grid.Row="8"
+                              Grid.Column="1"/>
+
+                    <TextBlock Grid.Row="9"
+                               Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="Export Frames"/>
+                    <CheckBox x:Name="ExportFramesCheckBox"
+                              Grid.Row="9"
+                              Grid.Column="1"
+                              IsChecked="True"
+                              VerticalAlignment="Center"
+                              Content="Save individual PNG frames"/>
+
+                    <TextBlock Grid.Row="10"
+                               Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="Export Spritesheet"/>
+                    <CheckBox x:Name="ExportSpritesheetCheckBox"
+                              Grid.Row="10"
+                              Grid.Column="1"
+                              IsChecked="False"
+                              VerticalAlignment="Center"
+                              Content="Save spritesheet PNG"/>
+                </Grid>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border Grid.Row="1"
+                BorderBrush="#2A3138"
+                BorderThickness="0,1,0,0"
+                Padding="16,12">
+            <StackPanel Spacing="8">
+                <ProgressBar x:Name="ExportProgressBar"
+                             Minimum="0"
+                             Maximum="1"
+                             Height="12"/>
+                <TextBlock x:Name="StatusTextBlock"
+                           Text="Idle."
+                           Foreground="#A9B4BF"/>
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Spacing="8">
+                    <Button x:Name="StartRenderButton"
+                            Content="Start Render"
+                            MinWidth="120"/>
+                    <Button x:Name="CancelButton"
+                            Content="Cancel"
+                            MinWidth="100"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

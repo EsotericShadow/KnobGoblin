@@ -1,0 +1,264 @@
+# Custom user rules
+#Ignore vscode AI rules
+.github/instructions/codacy.instructions.md
+
+
+#Ignore cursor AI rules
+.cursor/rules/codacy.mdc
+
+# Standard Visual Studio .gitignore
+## Ignore Visual Studio temporary files, build results, and generated files
+## https://docs.microsoft.com/en-us/visualstudio/ide/visual-studio-ide-and-source-control
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# User-specific files (MonoDevelop/Xamarin Studio)
+*.userprefs
+
+# Mono auto generated files
+mono_crash.*
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio 2015 cache/options directory
+.vs/
+# Visual Studio 2017 cache/options directory
+.vs/
+# Visual Studio 2019 cache/options directory
+.vs/
+# Visual Studio 2022 cache/options directory
+.vs/
+
+# MSTest test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# NUnit
+*.VisualState.xml
+[Tt]est[Rr]esult.xml
+sln.dotCover
+
+# Build Results of an ATL Project
+[Dd]ebugPS/
+[Rr]eleasePS/
+dlldata.c
+
+# BenchmarkDotNet
+BenchmarkDotNet.Artifacts/
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# StyleCop
+StyleCopReport.xml
+
+# Files built by Visual Studio
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.obj
+*.pch
+*.pdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*.log
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# Microsoft User Experience Virtualization (UE-V)
+.uev
+
+# NuGet Packages
+*.nupkg
+# The packages folder can be ignored because of Package Restore
+**/[Pp]ackages/*
+# except build/, which is used as an MSBuild target.
+!**/[Pp]ackages/build/
+# Uncomment if you don’t use Package Restore to restore your packages
+#!**/[Pp]ackages/
+# This is for the case when the packages folder is created directly under the solution directory
+[Pp]ackages/
+# NuGet v3's project-json cache
+.nuget/packages/*
+
+# Mac/Linux temporary files
+*~
+
+# Rider
+.idea/
+*.sln.iml
+
+# Code Analysis
+*.ruleset
+
+# Folders containing locally installed tools
+.store/
+tools/
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Visual Studio profiling files
+*.psess
+*.vsp
+*.vspx
+*.sap
+
+# Visual Studio Trace Files
+*.diagsession
+
+# Coverlet
+coverage.*.json
+coverage.*.xml
+coverage.cobertura.xml
+
+# NCrunch
+_NCrunch_*/
+.*crunch*.local.xml
+
+# MightyMoose
+*.mm.*
+AutoTest.Net/
+
+# Fake
+.fake/
+
+# Paket
+.paket/paket.exe
+paket-files/
+
+# F#
+.ionide/
+.fable/
+
+# Compiler-generated files
+project.razor.json
+
+# ASP.NET 5
+hosting.json
+
+# ASP.NET Core
+appsettings.Development.json
+appsettings.Development.json
+
+# Linqpad
+*.linq
+
+# Service Fabric
+*.sfproj
+*.sfproj.user
+
+# BizTalk
+*.btp.cs
+*.btm.cs
+*.odx.cs
+*.xsd.cs
+
+# FAKE
+build.fsx.lock
+
+# SQL Server Data Tools
+.sonarlint/
+
+# SonarQube
+*.sonar
+
+# Roslyn
+*.ruleset.json
+
+# ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# TeamCity
+*.p4work
+*.*.p4work.txt
+
+# DotCover
+*.dotCover
+
+# AxoCover
+.axoCover/*
+!.axoCover/settings.json
+
+# TestComplete
+*.tcconfig.local
+
+# Appveyor
+appveyor.yml
+
+# Test Projects
+*.csproj.user
+
+# Docker
+docker-compose.override.yml
+
+# C++
+*.aps
+
+# CMake
+CMakePresets.json
+
+# Avalonia
+App.axaml.cs
+App.axaml
+bin/
+obj/
+
+# Power Platform
+*.pax
+*.pa.json
+*.paconfig.json
+.paccache
+*.pcfproj.user
+
+# MyGet
+.myget/
+
+# Devcontainer
+.devcontainer/
+
+# ML.NET
+Model.consumption.cs
+Model.training.cs
+Model.zip
