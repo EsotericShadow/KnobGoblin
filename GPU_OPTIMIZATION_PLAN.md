@@ -71,6 +71,7 @@ The following sequenced plan will be executed to address the audit findings. Eac
 *   **Gate:** The application builds and passes performance comparisons against the baseline. The number of triangle intersection tests per paint sample drops massively.
 
 ### Phase 5: GPU Picking Path (True 3D-on-GPU)
+*   **Status:** Implemented.
 *   **Objective:** Move the entire paint hit-testing process to the GPU.
 *   **Actions:**
     1.  Implement an offscreen rendering pass that writes object ID and UV coordinates to a texture.

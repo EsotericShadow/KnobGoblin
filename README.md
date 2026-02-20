@@ -59,10 +59,11 @@ Supported values are `metal`, `opengl`, and `software`.
 3.  **Edit Materials:** Select the `CollarNode` or `MaterialNode` in the scene hierarchy to access and modify material properties in the inspector.
 4.  **Paint Textures:**
     *   Enable the **Brush Painting** toggle.
-    *   Select a **Paint Channel** (e.g., `Rust`, `Wear`).
+    *   Select a **Paint Channel** (e.g., `Rust`, `Wear`). If you select the `Color` channel, a dedicated color picker will appear in the "Brush Controls" tab.
     *   Choose a **Brush Type** and configure its settings (size, opacity, etc.).
     *   Click and drag on the 3D model in the viewport to paint.
-5.  **Export:** Once you are happy with the result, use the export functionality to save out the generated texture maps.
+5.  **Advanced Brush Controls:** Right-click within the 3D viewport to access a context menu that allows you to invert the brush direction along the X, Y, or Z (depth) axes. The Y-axis is inverted by default for more natural "up and down" painting.
+6.  **Export:** Once you are happy with the result, use the export functionality to save out the generated texture maps.
 
 ## Native Dependencies
 

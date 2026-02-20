@@ -49,7 +49,7 @@ namespace KnobForge.App.Views
             }
             else if (ReferenceEquals(sender, _brushPaintColorPicker))
             {
-                if (e.Property != ColorView.ColorProperty)
+                if (!string.Equals(e.Property?.Name, "Color", StringComparison.Ordinal))
                 {
                     return;
                 }

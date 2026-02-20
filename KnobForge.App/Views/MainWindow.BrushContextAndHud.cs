@@ -49,6 +49,7 @@ namespace KnobForge.App.Views
                 ? selected
                 : _project.BrushChannel;
             bool scratchMode = channel == PaintChannel.Scratch;
+            bool colorMode = channel == PaintChannel.Color;
 
             if (_scratchContextBannerBorder != null)
             {
@@ -73,6 +74,16 @@ namespace KnobForge.App.Views
             if (_generalPaintAdvancedPanel != null)
             {
                 _generalPaintAdvancedPanel.IsVisible = !scratchMode;
+            }
+
+            if (_colorChannelPanel != null)
+            {
+                _colorChannelPanel.IsVisible = !scratchMode && colorMode;
+            }
+
+            if (_brushPaintColorPicker != null)
+            {
+                _brushPaintColorPicker.IsEnabled = !scratchMode && colorMode;
             }
 
             if (_brushAdvancedExpander != null && scratchMode && !_brushAdvancedExpander.IsExpanded)

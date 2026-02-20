@@ -228,6 +228,9 @@ namespace KnobForge.App.Controls
         private bool _gizmoInvertX;
         private bool _gizmoInvertY = true;
         private bool _gizmoInvertZ;
+        private bool _brushInvertX;
+        private bool _brushInvertY = true;
+        private bool _brushInvertZ;
         private bool _invertImportedCollarOrbit;
         private bool _invertKnobFrontFaceWinding = true;
         private bool _invertImportedStlFrontFaceWinding = true;
@@ -3030,6 +3033,546 @@ namespace KnobForge.App.Controls
             }
         }
 
+        private bool TryMapPointerToPaintUvGpu(
+            Point pointerDip,
+            ModelNode modelNode,
+            CollarNode? collarNode,
+            bool drawCollar,
+            float referenceRadius,
+            out Vector2 uv)
+        {
+            uv = default;
+            if (!OperatingSystem.IsMacOS() || _context is null || _project is null)
+            {
+                return false;
+            }
+
+            if (!EnsurePaintPickMapRendered(modelNode, collarNode, drawCollar, referenceRadius))
+            {
+                return false;
+            }
+
+            int width = (int)_paintPickTextureWidth;
+            int height = (int)_paintPickTextureHeight;
+            if (width <= 0 || height <= 0)
+            {
+                return false;
+            }
+
+            SKPoint screenPoint = DipToScreen(pointerDip);
+            int sampleX = Math.Clamp((int)MathF.Round(screenPoint.X), 0, width - 1);
+            int sampleY = Math.Clamp((int)MathF.Round(screenPoint.Y), 0, height - 1);
+
+            if (TryReadPaintPickUv(sampleX, sampleY, out uv))
+            {
+                uv = ApplyBrushUvAxisInversion(uv);
+                return true;
+            }
+
+            int flippedY = (height - 1) - sampleY;
+            if (flippedY != sampleY && TryReadPaintPickUv(sampleX, flippedY, out uv))
+            {
+                uv = ApplyBrushUvAxisInversion(uv);
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool EnsurePaintPickMapRendered(
+            ModelNode modelNode,
+            CollarNode? collarNode,
+            bool drawCollar,
+            float referenceRadius)
+        {
+            if (_context is null || _project is null || _meshResources is null)
+            {
+                return false;
+            }
+
+            nuint width = (nuint)MathF.Max(1f, GetViewportWidthPx());
+            nuint height = (nuint)MathF.Max(1f, GetViewportHeightPx());
+            if (width == 0 || height == 0)
+            {
+                return false;
+            }
+
+            if (!EnsurePaintPickResources() || !EnsurePaintPickTargets(width, height))
+            {
+                return false;
+            }
+
+            if (!_paintPickMapDirty)
+            {
+                return true;
+            }
+
+            GpuUniforms knobUniforms = BuildUniformsForPixels(_project, modelNode, referenceRadius, width, height);
+            PaintPickUniform knobPickUniform = BuildPaintPickUniform(knobUniforms, objectId: 1f / 255f);
+
+            PaintPickUniform collarPickUniform = default;
+            bool drawCollarPick =
+                drawCollar &&
+                _collarResources is not null &&
+                _collarResources.VertexBuffer.Handle != IntPtr.Zero &&
+                _collarResources.IndexBuffer.Handle != IntPtr.Zero &&
+                collarNode is { Enabled: true };
+            if (drawCollarPick && collarNode is not null)
+            {
+                GpuUniforms collarUniforms = BuildCollarUniforms(knobUniforms, collarNode);
+                if (_invertImportedCollarOrbit && IsImportedCollarPreset(collarNode))
+                {
+                    collarUniforms.ModelRotationCosSin.Y = -collarUniforms.ModelRotationCosSin.Y;
+                }
+
+                collarPickUniform = BuildPaintPickUniform(collarUniforms, objectId: 2f / 255f);
+            }
+
+            IntPtr passDescriptor = ObjC.IntPtr_objc_msgSend(ObjCClasses.MTLRenderPassDescriptor, Selectors.RenderPassDescriptor);
+            if (passDescriptor == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            IntPtr colorAttachments = ObjC.IntPtr_objc_msgSend(passDescriptor, Selectors.ColorAttachments);
+            IntPtr colorAttachment0 = ObjC.IntPtr_objc_msgSend_UInt(colorAttachments, Selectors.ObjectAtIndexedSubscript, 0);
+            if (colorAttachment0 == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            ObjC.Void_objc_msgSend_IntPtr(colorAttachment0, Selectors.SetTexture, _paintPickTexture);
+            ObjC.Void_objc_msgSend_UInt(colorAttachment0, Selectors.SetLoadAction, MTLLoadActionClear);
+            ObjC.Void_objc_msgSend_UInt(colorAttachment0, Selectors.SetStoreAction, MTLStoreActionStore);
+            ObjC.Void_objc_msgSend_MTLClearColor(colorAttachment0, Selectors.SetClearColor, new MTLClearColor(0d, 0d, 0d, 0d));
+
+            IntPtr depthAttachment = ObjC.IntPtr_objc_msgSend(passDescriptor, Selectors.DepthAttachment);
+            if (depthAttachment != IntPtr.Zero)
+            {
+                ObjC.Void_objc_msgSend_IntPtr(depthAttachment, Selectors.SetTexture, _paintPickDepthTexture);
+                ObjC.Void_objc_msgSend_UInt(depthAttachment, Selectors.SetLoadAction, MTLLoadActionClear);
+                ObjC.Void_objc_msgSend_UInt(depthAttachment, Selectors.SetStoreAction, 0); // MTLStoreActionDontCare
+                ObjC.Void_objc_msgSend_Double(depthAttachment, Selectors.SetClearDepth, 1.0);
+            }
+
+            IntPtr commandBuffer = _context.CreateCommandBuffer().Handle;
+            if (commandBuffer == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            IntPtr encoderPtr = ObjC.IntPtr_objc_msgSend_IntPtr(commandBuffer, Selectors.RenderCommandEncoderWithDescriptor, passDescriptor);
+            if (encoderPtr == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            var encoderHandle = new MTLRenderCommandEncoderHandle(encoderPtr);
+            ObjC.Void_objc_msgSend_IntPtr(encoderPtr, Selectors.SetRenderPipelineState, _paintPickPipeline);
+            ObjC.Void_objc_msgSend_IntPtr(encoderPtr, Selectors.SetDepthStencilState, _paintPickDepthStencilState);
+            MetalPipelineManager.SetBackfaceCulling(encoderHandle, true);
+
+            GetCameraBasis(out Vector3 right, out Vector3 up, out Vector3 forward);
+            bool frontFacingClockwiseBase = ResolveFrontFacingClockwise(right, up, forward);
+            bool frontFacingClockwiseKnob = _invertKnobFrontFaceWinding
+                ? !frontFacingClockwiseBase
+                : frontFacingClockwiseBase;
+            bool frontFacingClockwiseCollar = frontFacingClockwiseBase;
+            if (drawCollarPick && collarNode is not null && IsImportedCollarPreset(collarNode) && _invertImportedStlFrontFaceWinding)
+            {
+                frontFacingClockwiseCollar = !frontFacingClockwiseCollar;
+            }
+
+            if (drawCollarPick && _collarResources is not null)
+            {
+                MetalPipelineManager.SetFrontFacingWinding(encoderHandle, frontFacingClockwiseCollar);
+                ObjC.Void_objc_msgSend_IntPtr_UInt_UInt(
+                    encoderPtr,
+                    Selectors.SetVertexBufferOffsetAtIndex,
+                    _collarResources.VertexBuffer.Handle,
+                    0,
+                    0);
+                UploadPaintPickUniform(encoderPtr, collarPickUniform);
+                ObjC.Void_objc_msgSend_UInt_UInt_UInt_IntPtr_UInt(
+                    encoderPtr,
+                    Selectors.DrawIndexedPrimitivesIndexCountIndexTypeIndexBufferIndexBufferOffset,
+                    MTLPrimitiveTypeTriangle,
+                    (nuint)_collarResources.IndexCount,
+                    (nuint)_collarResources.IndexType,
+                    _collarResources.IndexBuffer.Handle,
+                    0);
+            }
+
+            MetalPipelineManager.SetFrontFacingWinding(encoderHandle, frontFacingClockwiseKnob);
+            ObjC.Void_objc_msgSend_IntPtr_UInt_UInt(
+                encoderPtr,
+                Selectors.SetVertexBufferOffsetAtIndex,
+                _meshResources.VertexBuffer.Handle,
+                0,
+                0);
+            UploadPaintPickUniform(encoderPtr, knobPickUniform);
+            ObjC.Void_objc_msgSend_UInt_UInt_UInt_IntPtr_UInt(
+                encoderPtr,
+                Selectors.DrawIndexedPrimitivesIndexCountIndexTypeIndexBufferIndexBufferOffset,
+                MTLPrimitiveTypeTriangle,
+                (nuint)_meshResources.IndexCount,
+                (nuint)_meshResources.IndexType,
+                _meshResources.IndexBuffer.Handle,
+                0);
+
+            ObjC.Void_objc_msgSend(encoderPtr, Selectors.EndEncoding);
+            ObjC.Void_objc_msgSend(commandBuffer, Selectors.Commit);
+            ObjC.Void_objc_msgSend(commandBuffer, Selectors.WaitUntilCompleted);
+            _paintPickMapDirty = false;
+            return true;
+        }
+
+        private bool TryReadPaintPickUv(int sampleX, int sampleY, out Vector2 uv)
+        {
+            uv = default;
+            if (_paintPickTexture == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            sampleX = Math.Clamp(sampleX, 0, Math.Max(0, (int)_paintPickTextureWidth - 1));
+            sampleY = Math.Clamp(sampleY, 0, Math.Max(0, (int)_paintPickTextureHeight - 1));
+            Array.Clear(_paintPickReadbackPixel, 0, _paintPickReadbackPixel.Length);
+
+            GCHandle pinned = GCHandle.Alloc(_paintPickReadbackPixel, GCHandleType.Pinned);
+            try
+            {
+                MTLRegion region = new(
+                    new MTLOrigin((nuint)sampleX, (nuint)sampleY, 0),
+                    new MTLSize(1, 1, 1));
+                ObjC.Void_objc_msgSend_IntPtr_UInt_MTLRegion_UInt(
+                    _paintPickTexture,
+                    Selectors.GetBytesBytesPerRowFromRegionMipmapLevel,
+                    pinned.AddrOfPinnedObject(),
+                    4,
+                    region,
+                    0);
+            }
+            finally
+            {
+                pinned.Free();
+            }
+
+            byte r = _paintPickReadbackPixel[0];
+            byte g = _paintPickReadbackPixel[1];
+            byte objectId = _paintPickReadbackPixel[2];
+            byte a = _paintPickReadbackPixel[3];
+            if (a == 0 || objectId == 0)
+            {
+                return false;
+            }
+
+            uv = new Vector2(r / 255f, g / 255f);
+            return true;
+        }
+
+        private bool EnsurePaintPickResources()
+        {
+            if (_context is null || _context.Device.Handle == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            if (_paintPickPipeline != IntPtr.Zero && _paintPickDepthStencilState != IntPtr.Zero)
+            {
+                return true;
+            }
+
+            ReleasePaintPickResources();
+
+            IntPtr device = _context.Device.Handle;
+            IntPtr sourceString = ToNSString(PaintPickShaderSource);
+            IntPtr libraryError;
+            IntPtr library = ObjC.IntPtr_objc_msgSend_IntPtr_IntPtr_outIntPtr(
+                device,
+                Selectors.NewLibraryWithSourceOptionsError,
+                sourceString,
+                IntPtr.Zero,
+                out libraryError);
+            if (library == IntPtr.Zero)
+            {
+                LogPaintStampError($"Failed to compile paint pick shader: {DescribeNSError(libraryError)}");
+                return false;
+            }
+
+            IntPtr vertexName = ToNSString("vertex_paint_pick");
+            IntPtr fragmentName = ToNSString("fragment_paint_pick");
+            IntPtr vertexFunction = ObjC.IntPtr_objc_msgSend_IntPtr(library, Selectors.NewFunctionWithName, vertexName);
+            IntPtr fragmentFunction = ObjC.IntPtr_objc_msgSend_IntPtr(library, Selectors.NewFunctionWithName, fragmentName);
+            if (vertexFunction == IntPtr.Zero || fragmentFunction == IntPtr.Zero)
+            {
+                LogPaintStampError("Paint pick shader entry points were not found.");
+                if (vertexFunction != IntPtr.Zero)
+                {
+                    ObjC.Void_objc_msgSend(vertexFunction, Selectors.Release);
+                }
+
+                if (fragmentFunction != IntPtr.Zero)
+                {
+                    ObjC.Void_objc_msgSend(fragmentFunction, Selectors.Release);
+                }
+
+                ObjC.Void_objc_msgSend(library, Selectors.Release);
+                return false;
+            }
+
+            IntPtr pipeline = CreatePaintPickPipelineState(device, vertexFunction, fragmentFunction);
+            IntPtr depthStencilState = CreateDepthStencilState(device, depthWriteEnabled: true);
+            if (pipeline == IntPtr.Zero || depthStencilState == IntPtr.Zero)
+            {
+                if (pipeline != IntPtr.Zero)
+                {
+                    ObjC.Void_objc_msgSend(pipeline, Selectors.Release);
+                }
+
+                if (depthStencilState != IntPtr.Zero)
+                {
+                    ObjC.Void_objc_msgSend(depthStencilState, Selectors.Release);
+                }
+
+                ObjC.Void_objc_msgSend(vertexFunction, Selectors.Release);
+                ObjC.Void_objc_msgSend(fragmentFunction, Selectors.Release);
+                ObjC.Void_objc_msgSend(library, Selectors.Release);
+                return false;
+            }
+
+            _paintPickLibrary = library;
+            _paintPickVertexFunction = vertexFunction;
+            _paintPickFragmentFunction = fragmentFunction;
+            _paintPickPipeline = pipeline;
+            _paintPickDepthStencilState = depthStencilState;
+            _paintPickMapDirty = true;
+            return true;
+        }
+
+        private bool EnsurePaintPickTargets(nuint width, nuint height)
+        {
+            if (_context is null || _context.Device.Handle == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            if (_paintPickTexture != IntPtr.Zero &&
+                _paintPickDepthTexture != IntPtr.Zero &&
+                _paintPickTextureWidth == width &&
+                _paintPickTextureHeight == height)
+            {
+                return true;
+            }
+
+            ReleasePaintPickTargets();
+
+            IntPtr colorDescriptor = ObjC.IntPtr_objc_msgSend_UInt_UInt_UInt_Bool(
+                ObjCClasses.MTLTextureDescriptor,
+                Selectors.Texture2DDescriptorWithPixelFormatWidthHeightMipmapped,
+                PaintMaskPixelFormat,
+                width,
+                height,
+                false);
+            if (colorDescriptor == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            ObjC.Void_objc_msgSend_UInt(colorDescriptor, Selectors.SetUsage, 4); // MTLTextureUsageRenderTarget
+            ObjC.Void_objc_msgSend_UInt(colorDescriptor, Selectors.SetStorageMode, 0); // MTLStorageModeShared
+            IntPtr colorTexture = ObjC.IntPtr_objc_msgSend_IntPtr(_context.Device.Handle, Selectors.NewTextureWithDescriptor, colorDescriptor);
+            if (colorTexture == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            IntPtr depthDescriptor = ObjC.IntPtr_objc_msgSend_UInt_UInt_UInt_Bool(
+                ObjCClasses.MTLTextureDescriptor,
+                Selectors.Texture2DDescriptorWithPixelFormatWidthHeightMipmapped,
+                DepthPixelFormat,
+                width,
+                height,
+                false);
+            if (depthDescriptor == IntPtr.Zero)
+            {
+                ObjC.Void_objc_msgSend(colorTexture, Selectors.Release);
+                return false;
+            }
+
+            ObjC.Void_objc_msgSend_UInt(depthDescriptor, Selectors.SetUsage, 4); // MTLTextureUsageRenderTarget
+            IntPtr depthTexture = ObjC.IntPtr_objc_msgSend_IntPtr(_context.Device.Handle, Selectors.NewTextureWithDescriptor, depthDescriptor);
+            if (depthTexture == IntPtr.Zero)
+            {
+                ObjC.Void_objc_msgSend(colorTexture, Selectors.Release);
+                return false;
+            }
+
+            _paintPickTexture = colorTexture;
+            _paintPickDepthTexture = depthTexture;
+            _paintPickTextureWidth = width;
+            _paintPickTextureHeight = height;
+            _paintPickMapDirty = true;
+            return true;
+        }
+
+        private void ReleasePaintPickTargets()
+        {
+            if (_paintPickDepthTexture != IntPtr.Zero)
+            {
+                ObjC.Void_objc_msgSend(_paintPickDepthTexture, Selectors.Release);
+                _paintPickDepthTexture = IntPtr.Zero;
+            }
+
+            if (_paintPickTexture != IntPtr.Zero)
+            {
+                ObjC.Void_objc_msgSend(_paintPickTexture, Selectors.Release);
+                _paintPickTexture = IntPtr.Zero;
+            }
+
+            _paintPickTextureWidth = 0;
+            _paintPickTextureHeight = 0;
+            _paintPickMapDirty = true;
+        }
+
+        private void ReleasePaintPickResources()
+        {
+            ReleasePaintPickTargets();
+
+            if (_paintPickPipeline != IntPtr.Zero)
+            {
+                ObjC.Void_objc_msgSend(_paintPickPipeline, Selectors.Release);
+                _paintPickPipeline = IntPtr.Zero;
+            }
+
+            if (_paintPickDepthStencilState != IntPtr.Zero)
+            {
+                ObjC.Void_objc_msgSend(_paintPickDepthStencilState, Selectors.Release);
+                _paintPickDepthStencilState = IntPtr.Zero;
+            }
+
+            if (_paintPickVertexFunction != IntPtr.Zero)
+            {
+                ObjC.Void_objc_msgSend(_paintPickVertexFunction, Selectors.Release);
+                _paintPickVertexFunction = IntPtr.Zero;
+            }
+
+            if (_paintPickFragmentFunction != IntPtr.Zero)
+            {
+                ObjC.Void_objc_msgSend(_paintPickFragmentFunction, Selectors.Release);
+                _paintPickFragmentFunction = IntPtr.Zero;
+            }
+
+            if (_paintPickLibrary != IntPtr.Zero)
+            {
+                ObjC.Void_objc_msgSend(_paintPickLibrary, Selectors.Release);
+                _paintPickLibrary = IntPtr.Zero;
+            }
+
+            _paintPickMapDirty = true;
+        }
+
+        private static IntPtr CreatePaintPickPipelineState(IntPtr device, IntPtr vertexFunction, IntPtr fragmentFunction)
+        {
+            IntPtr descriptor = ObjC.IntPtr_objc_msgSend(
+                ObjC.IntPtr_objc_msgSend(ObjCClasses.MTLRenderPipelineDescriptor, Selectors.Alloc),
+                Selectors.Init);
+            if (descriptor == IntPtr.Zero)
+            {
+                return IntPtr.Zero;
+            }
+
+            ObjC.Void_objc_msgSend_IntPtr(descriptor, Selectors.SetVertexFunction, vertexFunction);
+            ObjC.Void_objc_msgSend_IntPtr(descriptor, Selectors.SetFragmentFunction, fragmentFunction);
+
+            IntPtr colorAttachments = ObjC.IntPtr_objc_msgSend(descriptor, Selectors.ColorAttachments);
+            IntPtr colorAttachment0 = ObjC.IntPtr_objc_msgSend_UInt(colorAttachments, Selectors.ObjectAtIndexedSubscript, 0);
+            if (colorAttachment0 == IntPtr.Zero)
+            {
+                ObjC.Void_objc_msgSend(descriptor, Selectors.Release);
+                return IntPtr.Zero;
+            }
+
+            ObjC.Void_objc_msgSend_UInt(colorAttachment0, Selectors.SetPixelFormat, PaintMaskPixelFormat);
+            ObjC.Void_objc_msgSend_Bool(colorAttachment0, Selectors.SetBlendingEnabled, false);
+            ObjC.Void_objc_msgSend_UInt(descriptor, Selectors.SetDepthAttachmentPixelFormat, DepthPixelFormat);
+
+            IntPtr pipelineError;
+            IntPtr pipeline = ObjC.IntPtr_objc_msgSend_IntPtr_outIntPtr(
+                device,
+                Selectors.NewRenderPipelineStateWithDescriptorError,
+                descriptor,
+                out pipelineError);
+            ObjC.Void_objc_msgSend(descriptor, Selectors.Release);
+            if (pipeline == IntPtr.Zero)
+            {
+                LogPaintStampError($"Failed to create paint pick pipeline: {DescribeNSError(pipelineError)}");
+            }
+
+            return pipeline;
+        }
+
+        private static IntPtr CreateDepthStencilState(IntPtr device, bool depthWriteEnabled)
+        {
+            IntPtr descriptor = ObjC.IntPtr_objc_msgSend(
+                ObjC.IntPtr_objc_msgSend(ObjCClasses.MTLDepthStencilDescriptor, Selectors.Alloc),
+                Selectors.Init);
+            if (descriptor == IntPtr.Zero)
+            {
+                return IntPtr.Zero;
+            }
+
+            ObjC.Void_objc_msgSend_UInt(descriptor, Selectors.SetDepthCompareFunction, 3); // MTLCompareFunctionLessEqual
+            ObjC.Void_objc_msgSend_Bool(descriptor, Selectors.SetDepthWriteEnabled, depthWriteEnabled);
+
+            IntPtr depthStencilState = ObjC.IntPtr_objc_msgSend_IntPtr(
+                device,
+                Selectors.NewDepthStencilStateWithDescriptor,
+                descriptor);
+            ObjC.Void_objc_msgSend(descriptor, Selectors.Release);
+            return depthStencilState;
+        }
+
+        private static PaintPickUniform BuildPaintPickUniform(in GpuUniforms uniforms, float objectId)
+        {
+            return new PaintPickUniform
+            {
+                CameraPosAndReferenceRadius = uniforms.CameraPosAndReferenceRadius,
+                RightAndScaleX = uniforms.RightAndScaleX,
+                UpAndScaleY = uniforms.UpAndScaleY,
+                ForwardAndScaleZ = uniforms.ForwardAndScaleZ,
+                ProjectionOffsetsAndObjectId = new Vector4(
+                    uniforms.ProjectionOffsetsAndLightCount.X,
+                    uniforms.ProjectionOffsetsAndLightCount.Y,
+                    objectId,
+                    0f),
+                ModelRotationCosSin = uniforms.ModelRotationCosSin
+            };
+        }
+
+        private void UploadPaintPickUniform(IntPtr encoderPtr, in PaintPickUniform uniform)
+        {
+            if (encoderPtr == IntPtr.Zero)
+            {
+                return;
+            }
+
+            int uniformSize = Marshal.SizeOf<PaintPickUniform>();
+            IntPtr uniformPtr = EnsureUniformUploadScratchBuffer(uniformSize, paintStamp: false);
+            if (uniformPtr == IntPtr.Zero)
+            {
+                return;
+            }
+
+            Marshal.StructureToPtr(uniform, uniformPtr, false);
+            ObjC.Void_objc_msgSend_IntPtr_UInt_UInt(
+                encoderPtr,
+                Selectors.SetVertexBytesLengthAtIndex,
+                uniformPtr,
+                (nuint)uniformSize,
+                1);
+        }
+
         private void EnsurePaintMaskTexture(KnobProject? project)
         {
             if (_context is null || _context.Device.Handle == IntPtr.Zero || project is null)
@@ -3487,13 +4030,14 @@ namespace KnobForge.App.Controls
                     bool optionDown = e.KeyModifiers.HasFlag(KeyModifiers.Alt) || _lastKnownModifiers.HasFlag(KeyModifiers.Alt);
                     _optionDepthRampActive = optionDown;
                     float baseDepth = Math.Clamp(_project.ScratchDepth, 0f, 1f);
+                    float depthSign = _brushInvertZ ? -1f : 1f;
                     if (optionDown)
                     {
-                        _scratchCurrentDepth += deltaPx * _project.ScratchDepthRamp;
+                        _scratchCurrentDepth += deltaPx * _project.ScratchDepthRamp * depthSign;
                     }
                     else
                     {
-                        _scratchCurrentDepth -= deltaPx * (_project.ScratchDepthRamp * 0.35f);
+                        _scratchCurrentDepth -= deltaPx * (_project.ScratchDepthRamp * 0.35f) * depthSign;
                     }
 
                     _scratchCurrentDepth = Math.Clamp(_scratchCurrentDepth, baseDepth, 1f);
@@ -3670,6 +4214,21 @@ namespace KnobForge.App.Controls
             };
         }
 
+        private Vector2 ApplyBrushUvAxisInversion(Vector2 uv)
+        {
+            if (_brushInvertX)
+            {
+                uv.X = 1f - uv.X;
+            }
+
+            if (_brushInvertY)
+            {
+                uv.Y = 1f - uv.Y;
+            }
+
+            return uv;
+        }
+
         private bool TryMapPointerToPaintUv(Point pointerDip, out Vector2 uv, out float referenceRadius)
         {
             uv = default;
@@ -3744,7 +4303,7 @@ namespace KnobForge.App.Controls
             Vector3 bestLocalHit = default;
 
             if (TryIntersectMeshWithModelRotation(
-                    _meshResources,
+                    _meshResources!,
                     rayOrigin,
                     rayDirection,
                     modelRotation,
@@ -3797,6 +4356,7 @@ namespace KnobForge.App.Controls
                 uv = new Vector2(
                     (localX / (2f * referenceRadius)) + 0.5f,
                     (localY / (2f * referenceRadius)) + 0.5f);
+                uv = ApplyBrushUvAxisInversion(uv);
                 _lastPaintHitMode = PaintHitMode.Fallback;
                 return true;
             }
@@ -3804,6 +4364,7 @@ namespace KnobForge.App.Controls
             uv = new Vector2(
                 (bestLocalHit.X / (2f * referenceRadius)) + 0.5f,
                 (bestLocalHit.Y / (2f * referenceRadius)) + 0.5f);
+            uv = ApplyBrushUvAxisInversion(uv);
             _lastPaintHitMode = PaintHitMode.MeshHit;
             return true;
         }
@@ -4244,6 +4805,45 @@ namespace KnobForge.App.Controls
                 InvalidateGpu();
             };
 
+            var brushInvertXItem = new MenuItem
+            {
+                Header = "Brush Invert X",
+                ToggleType = MenuItemToggleType.CheckBox,
+                IsChecked = _brushInvertX
+            };
+            brushInvertXItem.Click += (_, _) =>
+            {
+                _brushInvertX = !_brushInvertX;
+                PrintOrientation();
+                InvalidateGpu();
+            };
+
+            var brushInvertYItem = new MenuItem
+            {
+                Header = "Brush Invert Y",
+                ToggleType = MenuItemToggleType.CheckBox,
+                IsChecked = _brushInvertY
+            };
+            brushInvertYItem.Click += (_, _) =>
+            {
+                _brushInvertY = !_brushInvertY;
+                PrintOrientation();
+                InvalidateGpu();
+            };
+
+            var brushInvertZItem = new MenuItem
+            {
+                Header = "Brush Invert Z (Depth)",
+                ToggleType = MenuItemToggleType.CheckBox,
+                IsChecked = _brushInvertZ
+            };
+            brushInvertZItem.Click += (_, _) =>
+            {
+                _brushInvertZ = !_brushInvertZ;
+                PrintOrientation();
+                InvalidateGpu();
+            };
+
             var flipCameraItem = new MenuItem
             {
                 Header = "Flip Camera 180°",
@@ -4312,6 +4912,9 @@ namespace KnobForge.App.Controls
                 _gizmoInvertX = false;
                 _gizmoInvertY = true;
                 _gizmoInvertZ = false;
+                _brushInvertX = false;
+                _brushInvertY = true;
+                _brushInvertZ = false;
                 _invertImportedCollarOrbit = false;
                 _invertKnobFrontFaceWinding = true;
                 _invertImportedStlFrontFaceWinding = true;
@@ -4330,6 +4933,10 @@ namespace KnobForge.App.Controls
                     gizmoInvertXItem,
                     gizmoInvertYItem,
                     gizmoInvertZItem,
+                    new Separator(),
+                    brushInvertXItem,
+                    brushInvertYItem,
+                    brushInvertZItem,
                     new Separator(),
                     flipCameraItem,
                     invertCollarOrbitItem,
@@ -4354,6 +4961,9 @@ namespace KnobForge.App.Controls
             Console.WriteLine($"GizmoInvertX: {_gizmoInvertX}");
             Console.WriteLine($"GizmoInvertY: {_gizmoInvertY}");
             Console.WriteLine($"GizmoInvertZ: {_gizmoInvertZ}");
+            Console.WriteLine($"BrushInvertX: {_brushInvertX}");
+            Console.WriteLine($"BrushInvertY: {_brushInvertY}");
+            Console.WriteLine($"BrushInvertZ: {_brushInvertZ}");
             Console.WriteLine($"FlipCamera180: {_orientation.FlipCamera180}");
             Console.WriteLine($"InvertImportedCollarOrbit: {_invertImportedCollarOrbit}");
             Console.WriteLine($"InvertKnobFrontFaceWinding: {_invertKnobFrontFaceWinding}");
@@ -4443,6 +5053,79 @@ namespace KnobForge.App.Controls
         {
             Console.Error.WriteLine($"[MetalViewport] {message}");
         }
+
+        private const string PaintPickShaderSource = @"
+#include <metal_stdlib>
+using namespace metal;
+
+struct MetalVertex
+{
+    packed_float3 position;
+    packed_float3 normal;
+    packed_float4 tangent;
+};
+
+struct PaintPickUniform
+{
+    float4 cameraPosAndReferenceRadius;
+    float4 rightAndScaleX;
+    float4 upAndScaleY;
+    float4 forwardAndScaleZ;
+    float4 projectionOffsetsAndObjectId;
+    float4 modelRotationCosSin;
+};
+
+struct PaintPickVertexOut
+{
+    float4 position [[position]];
+    float2 uv;
+    float objectId;
+};
+
+vertex PaintPickVertexOut vertex_paint_pick(
+    uint vertexId [[vertex_id]],
+    const device MetalVertex* vertices [[buffer(0)]],
+    constant PaintPickUniform& uniforms [[buffer(1)]])
+{
+    MetalVertex v = vertices[vertexId];
+    float3 localPos = float3(v.position);
+    float cosA = uniforms.modelRotationCosSin.x;
+    float sinA = uniforms.modelRotationCosSin.y;
+
+    float3 worldPos = float3(
+        localPos.x * cosA - localPos.y * sinA,
+        localPos.x * sinA + localPos.y * cosA,
+        localPos.z);
+
+    float clipX = dot(worldPos, uniforms.rightAndScaleX.xyz) * uniforms.rightAndScaleX.w + uniforms.projectionOffsetsAndObjectId.x;
+    float clipY = dot(worldPos, uniforms.upAndScaleY.xyz) * uniforms.upAndScaleY.w + uniforms.projectionOffsetsAndObjectId.y;
+    float cameraDepth = dot(worldPos - uniforms.cameraPosAndReferenceRadius.xyz, uniforms.forwardAndScaleZ.xyz);
+    float nearPlane = max(0.05, uniforms.cameraPosAndReferenceRadius.w * 0.5);
+    float farPlane = max(nearPlane + 1.0, uniforms.cameraPosAndReferenceRadius.w * 14.0);
+    float depth01 = clamp((cameraDepth - nearPlane) / (farPlane - nearPlane), 0.0, 1.0);
+    float clipZ = clamp(depth01, 0.001, 0.999);
+
+    float referenceRadius = max(1.0, uniforms.cameraPosAndReferenceRadius.w);
+    float2 uv = localPos.xy / max(referenceRadius * 2.0, 1e-4) + 0.5;
+
+    PaintPickVertexOut outVertex;
+    outVertex.position = float4(clipX, clipY, clipZ, 1.0);
+    outVertex.uv = uv;
+    outVertex.objectId = uniforms.projectionOffsetsAndObjectId.z;
+    return outVertex;
+}
+
+fragment float4 fragment_paint_pick(PaintPickVertexOut inVertex [[stage_in]])
+{
+    if (any(inVertex.uv < float2(0.0)) || any(inVertex.uv > float2(1.0)))
+    {
+        discard_fragment();
+    }
+
+    float2 uv = clamp(inVertex.uv, float2(0.0), float2(1.0));
+    return float4(uv.x, uv.y, inVertex.objectId, 1.0);
+}
+";
 
         private const string PaintMaskStampShaderSource = @"
 #include <metal_stdlib>
@@ -4762,6 +5445,7 @@ fragment float4 fragment_light_gizmo_overlay(
             public static readonly IntPtr MTLRenderPassDescriptor = ObjC.objc_getClass("MTLRenderPassDescriptor");
             public static readonly IntPtr MTLTextureDescriptor = ObjC.objc_getClass("MTLTextureDescriptor");
             public static readonly IntPtr MTLRenderPipelineDescriptor = ObjC.objc_getClass("MTLRenderPipelineDescriptor");
+            public static readonly IntPtr MTLDepthStencilDescriptor = ObjC.objc_getClass("MTLDepthStencilDescriptor");
         }
 
         private static class Selectors
@@ -4812,6 +5496,11 @@ fragment float4 fragment_light_gizmo_overlay(
             public static readonly IntPtr SetSourceAlphaBlendFactor = ObjC.sel_registerName("setSourceAlphaBlendFactor:");
             public static readonly IntPtr SetDestinationAlphaBlendFactor = ObjC.sel_registerName("setDestinationAlphaBlendFactor:");
             public static readonly IntPtr SetWriteMask = ObjC.sel_registerName("setWriteMask:");
+            public static readonly IntPtr SetDepthAttachmentPixelFormat = ObjC.sel_registerName("setDepthAttachmentPixelFormat:");
+            public static readonly IntPtr SetDepthCompareFunction = ObjC.sel_registerName("setDepthCompareFunction:");
+            public static readonly IntPtr SetDepthWriteEnabled = ObjC.sel_registerName("setDepthWriteEnabled:");
+            public static readonly IntPtr NewDepthStencilStateWithDescriptor = ObjC.sel_registerName("newDepthStencilStateWithDescriptor:");
+            public static readonly IntPtr SetDepthStencilState = ObjC.sel_registerName("setDepthStencilState:");
             public static readonly IntPtr SetCullMode = ObjC.sel_registerName("setCullMode:");
             public static readonly IntPtr NewRenderPipelineStateWithDescriptorError = ObjC.sel_registerName("newRenderPipelineStateWithDescriptor:error:");
             public static readonly IntPtr SetVertexBufferOffsetAtIndex = ObjC.sel_registerName("setVertexBuffer:offset:atIndex:");
@@ -4833,6 +5522,135 @@ fragment float4 fragment_light_gizmo_overlay(
             public static readonly IntPtr PresentDrawable = ObjC.sel_registerName("presentDrawable:");
             public static readonly IntPtr Commit = ObjC.sel_registerName("commit");
             public static readonly IntPtr WaitUntilCompleted = ObjC.sel_registerName("waitUntilCompleted");
+        }
+
+        private static class ObjC
+        {
+            [DllImport("/usr/lib/libobjc.A.dylib")]
+            public static extern IntPtr objc_getClass(string name);
+
+            [DllImport("/usr/lib/libobjc.A.dylib")]
+            public static extern IntPtr sel_registerName(string name);
+
+            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            public static extern IntPtr IntPtr_objc_msgSend(IntPtr receiver, IntPtr selector);
+
+            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            public static extern IntPtr IntPtr_objc_msgSend_IntPtr(IntPtr receiver, IntPtr selector, IntPtr arg1);
+
+            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            public static extern IntPtr IntPtr_objc_msgSend_UInt(IntPtr receiver, IntPtr selector, nuint index);
+
+            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            public static extern IntPtr IntPtr_objc_msgSend_UInt_UInt_UInt_Bool(
+                IntPtr receiver,
+                IntPtr selector,
+                nuint arg1,
+                nuint arg2,
+                nuint arg3,
+                bool arg4);
+
+            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            public static extern IntPtr IntPtr_objc_msgSend_IntPtr_outIntPtr(
+                IntPtr receiver,
+                IntPtr selector,
+                IntPtr arg1,
+                out IntPtr arg2);
+
+            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            public static extern IntPtr IntPtr_objc_msgSend_IntPtr_IntPtr_outIntPtr(
+                IntPtr receiver,
+                IntPtr selector,
+                IntPtr arg1,
+                IntPtr arg2,
+                out IntPtr arg3);
+
+            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            public static extern nuint UInt_objc_msgSend(IntPtr receiver, IntPtr selector);
+
+            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            public static extern void Void_objc_msgSend(IntPtr receiver, IntPtr selector);
+
+            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            public static extern void Void_objc_msgSend_IntPtr(IntPtr receiver, IntPtr selector, IntPtr arg1);
+
+            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            public static extern void Void_objc_msgSend_IntPtr_UInt(
+                IntPtr receiver,
+                IntPtr selector,
+                IntPtr arg1,
+                nuint arg2);
+
+            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            public static extern void Void_objc_msgSend_UInt(IntPtr receiver, IntPtr selector, nuint arg1);
+
+            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            public static extern void Void_objc_msgSend_Bool(IntPtr receiver, IntPtr selector, bool arg1);
+
+            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            public static extern void Void_objc_msgSend_Double(IntPtr receiver, IntPtr selector, double arg1);
+
+            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            public static extern void Void_objc_msgSend_IntPtr_UInt_UInt(
+                IntPtr receiver,
+                IntPtr selector,
+                IntPtr arg1,
+                nuint arg2,
+                nuint arg3);
+
+            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            public static extern void Void_objc_msgSend_UInt_UInt_UInt(
+                IntPtr receiver,
+                IntPtr selector,
+                nuint arg1,
+                nuint arg2,
+                nuint arg3);
+
+            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            public static extern void Void_objc_msgSend_UInt_UInt_UInt_IntPtr_UInt(
+                IntPtr receiver,
+                IntPtr selector,
+                nuint arg1,
+                nuint arg2,
+                nuint arg3,
+                IntPtr arg4,
+                nuint arg5);
+
+            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            public static extern void Void_objc_msgSend_MTLRegion_UInt_IntPtr_UInt(
+                IntPtr receiver,
+                IntPtr selector,
+                MTLRegion arg1,
+                nuint arg2,
+                IntPtr arg3,
+                nuint arg4);
+
+            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            public static extern void Void_objc_msgSend_IntPtr_UInt_MTLRegion_UInt(
+                IntPtr receiver,
+                IntPtr selector,
+                IntPtr arg1,
+                nuint arg2,
+                MTLRegion arg3,
+                nuint arg4);
+
+            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            public static extern void Void_objc_msgSend_MTLClearColor(
+                IntPtr receiver,
+                IntPtr selector,
+                MTLClearColor arg1);
+
+            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            public static extern void Void_objc_msgSend_CGRect(
+                IntPtr receiver,
+                IntPtr selector,
+                CGRect arg1);
+
+            [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+            public static extern void Void_objc_msgSend_CGSize(
+                IntPtr receiver,
+                IntPtr selector,
+                CGSize arg1);
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -4940,6 +5758,17 @@ fragment float4 fragment_light_gizmo_overlay(
             public Vector4 CenterRadiusOpacity;
             public Vector4 Params0;
             public Vector4 Params1;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct PaintPickUniform
+        {
+            public Vector4 CameraPosAndReferenceRadius;
+            public Vector4 RightAndScaleX;
+            public Vector4 UpAndScaleY;
+            public Vector4 ForwardAndScaleZ;
+            public Vector4 ProjectionOffsetsAndObjectId;
+            public Vector4 ModelRotationCosSin;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -5588,94 +6417,4 @@ fragment float4 fragment_light_gizmo_overlay(
         {
         }
     }
-    
-    #region Bounding Volume Hierarchy
-    
-    private readonly struct AABB
-    {
-        public readonly Vector3 Min;
-        public readonly Vector3 Max;
-
-        public AABB(Vector3 min, Vector3 max)
-        {
-            Min = min;
-            Max = max;
-        }
-
-        public static AABB FromTriangle(Vector3 v0, Vector3 v1, Vector3 v2)
-        {
-            var min = Vector3.Min(v0, Vector3.Min(v1, v2));
-            var max = Vector3.Max(v0, Vector3.Max(v1, v2));
-            return new AABB(min, max);
-        }
-
-        public static AABB Merge(AABB a, AABB b)
-        {
-            return new AABB(Vector3.Min(a.Min, b.Min), Vector3.Max(a.Max, b.Max));
-        }
-    }
-
-    private sealed class BvhNode
-    {
-        public AABB Bbox;
-        public int StartIndex;
-        public int PrimitiveCount;
-        public BvhNode? Left;
-        public BvhNode? Right;
-    }
-
-    private sealed class BoundingVolumeHierarchy
-    {
-        private BvhNode? _root;
-        private readonly List<int> _triangleIndices = new();
-
-        public void Build(List<Vector3> vertices, List<int> indices)
-        {
-            _triangleIndices.Clear();
-            var triangleAabbs = new List<(int index, AABB aabb)>();
-            for (int i = 0; i < indices.Count; i += 3)
-            {
-                int triIndex = i / 3;
-                var v0 = vertices[indices[i]];
-                var v1 = vertices[indices[i + 1]];
-                var v2 = vertices[indices[i + 2]];
-                triangleAabbs.Add((triIndex, AABB.FromTriangle(v0, v1, v2)));
-                _triangleIndices.Add(triIndex);
-            }
-
-            _root = BuildRecursive(triangleAabbs, 0, triangleAabbs.Count);
-        }
-
-        private BvhNode BuildRecursive(List<(int index, AABB aabb)> triangleAabbs, int start, int end)
-        {
-            var node = new BvhNode();
-            AABB bbox = triangleAabbs[start].aabb;
-            for (int i = start + 1; i < end; i++)
-            {
-                bbox = AABB.Merge(bbox, triangleAabbs[i].aabb);
-            }
-            node.Bbox = bbox;
-            node.StartIndex = start;
-            node.PrimitiveCount = end - start;
-
-            if (node.PrimitiveCount <= 4)
-            {
-                return node;
-            }
-
-            Vector3 extents = bbox.Max - bbox.Min;
-            int axis = extents.X > extents.Y ? (extents.X > extents.Z ? 0 : 2) : (extents.Y > extents.Z ? 1 : 2);
-
-            triangleAabbs.Sort(start, node.PrimitiveCount, Comparer<(int, AABB)>.Create((a, b) =>
-                (a.aabb.Min[axis] + a.aabb.Max[axis]).CompareTo(b.aabb.Min[axis] + b.aabb.Max[axis])));
-
-            int mid = start + node.PrimitiveCount / 2;
-            node.Left = BuildRecursive(triangleAabbs, start, mid);
-            node.Right = BuildRecursive(triangleAabbs, mid, end);
-
-            return node;
-        }
-    }
-
-    #endregion
 }

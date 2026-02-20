@@ -197,6 +197,7 @@ namespace KnobForge.App.Views
             private readonly ComboBox? _brushPaintChannelCombo;
             private readonly ComboBox? _brushTypeCombo;
             private readonly ColorPicker? _brushPaintColorPicker;
+            private readonly StackPanel? _colorChannelPanel;
             private readonly ComboBox? _scratchAbrasionTypeCombo;
             private readonly Border? _scratchContextBannerBorder;
             private readonly StackPanel? _scratchPrimaryPanel;
@@ -542,6 +543,7 @@ namespace KnobForge.App.Views
             _brushPaintChannelCombo = this.FindControl<ComboBox>("BrushPaintChannelCombo");
             _brushTypeCombo = this.FindControl<ComboBox>("BrushTypeCombo");
             _brushPaintColorPicker = this.FindControl<ColorPicker>("BrushPaintColorPicker");
+            _colorChannelPanel = this.FindControl<StackPanel>("ColorChannelPanel");
             _scratchAbrasionTypeCombo = this.FindControl<ComboBox>("ScratchAbrasionTypeCombo");
             _scratchContextBannerBorder = this.FindControl<Border>("ScratchContextBannerBorder");
             _scratchPrimaryPanel = this.FindControl<StackPanel>("ScratchPrimaryPanel");

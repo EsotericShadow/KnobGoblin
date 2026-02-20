@@ -627,11 +627,13 @@
                                         <TextBlock Text="Brush Type (Paint)"/>
                                         <ComboBox x:Name="BrushTypeCombo"/>
 
-                                        <TextBlock Text="Paint Color (Color Channel)"/>
-                                        <colorpicker:ColorPicker x:Name="BrushPaintColorPicker"
-                                                                 IsAlphaEnabled="False"
-                                                                 IsAlphaVisible="False"
-                                                                 IsHexInputVisible="True"/>
+                                        <StackPanel x:Name="ColorChannelPanel" Spacing="4">
+                                            <TextBlock Text="Color Paint Brush Color"/>
+                                            <colorpicker:ColorPicker x:Name="BrushPaintColorPicker"
+                                                                     IsAlphaEnabled="False"
+                                                                     IsAlphaVisible="False"
+                                                                     IsHexInputVisible="True"/>
+                                        </StackPanel>
 
                                         <TextBlock Text="Brush Size (px)"/>
                                         <Slider x:Name="BrushSizeSlider" Minimum="1" Maximum="320"/>
