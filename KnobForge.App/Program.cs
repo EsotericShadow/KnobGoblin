@@ -16,35 +16,34 @@ class Program
         Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
         Console.SetError(new StreamWriter(Console.OpenStandardError()) { AutoFlush = true });
 
-        string mode = (Environment.GetEnvironmentVariable("KNOBFORGE_RENDER_MODE") ?? "default")
+        string requestedMode = (Environment.GetEnvironmentVariable("KNOBFORGE_RENDER_MODE") ?? string.Empty)
             .Trim()
             .ToLowerInvariant();
+        string mode = string.IsNullOrWhiteSpace(requestedMode) ? "metal" : requestedMode;
+        if (OperatingSystem.IsMacOS() && (mode == "software" || mode == "opengl"))
+        {
+            Console.Error.WriteLine($">>> RenderMode='{mode}' requested but overridden to 'metal' (GPU-only policy).");
+            mode = "metal";
+        }
+
         Console.WriteLine($">>> RenderMode={mode}");
 
         var appBuilder = BuildAvaloniaApp();
         if (OperatingSystem.IsMacOS())
         {
-            AvaloniaNativePlatformOptions? options = mode switch
+            AvaloniaNativePlatformOptions options = mode switch
             {
-                "opengl" => new AvaloniaNativePlatformOptions
-                {
-                    RenderingMode = new[] { AvaloniaNativeRenderingMode.OpenGl }
-                },
                 "metal" => new AvaloniaNativePlatformOptions
                 {
                     RenderingMode = new[] { AvaloniaNativeRenderingMode.Metal }
                 },
-                "software" => new AvaloniaNativePlatformOptions
+                _ => new AvaloniaNativePlatformOptions
                 {
-                    RenderingMode = new[] { AvaloniaNativeRenderingMode.Software }
-                },
-                _ => null
+                    RenderingMode = new[] { AvaloniaNativeRenderingMode.Metal }
+                }
             };
 
-            if (options != null)
-            {
-                appBuilder = appBuilder.With(options);
-            }
+            appBuilder = appBuilder.With(options);
         }
 
         appBuilder.StartWithClassicDesktopLifetime(args);

@@ -209,10 +209,14 @@ namespace KnobForge.App.Views
             private readonly Slider? _brushOpacitySlider;
         private readonly Slider? _brushDarknessSlider;
         private readonly Slider? _brushSpreadSlider;
+        private readonly Slider? _paintCoatMetallicSlider;
+        private readonly Slider? _paintCoatRoughnessSlider;
         private readonly TextBox? _brushSizeInputTextBox;
         private readonly TextBox? _brushOpacityInputTextBox;
         private readonly TextBox? _brushDarknessInputTextBox;
         private readonly TextBox? _brushSpreadInputTextBox;
+        private readonly TextBox? _paintCoatMetallicInputTextBox;
+        private readonly TextBox? _paintCoatRoughnessInputTextBox;
         private readonly Slider? _scratchWidthSlider;
         private readonly Slider? _scratchDepthSlider;
         private readonly Slider? _scratchResistanceSlider;
@@ -323,6 +327,8 @@ namespace KnobForge.App.Views
         private readonly TextBlock? _brushOpacityValueText;
         private readonly TextBlock? _brushDarknessValueText;
         private readonly TextBlock? _brushSpreadValueText;
+        private readonly TextBlock? _paintCoatMetallicValueText;
+        private readonly TextBlock? _paintCoatRoughnessValueText;
         private readonly TextBlock? _scratchWidthValueText;
         private readonly TextBlock? _scratchDepthValueText;
         private readonly TextBlock? _scratchResistanceValueText;
@@ -555,10 +561,14 @@ namespace KnobForge.App.Views
             _brushOpacitySlider = this.FindControl<Slider>("BrushOpacitySlider");
             _brushDarknessSlider = this.FindControl<Slider>("BrushDarknessSlider");
             _brushSpreadSlider = this.FindControl<Slider>("BrushSpreadSlider");
+            _paintCoatMetallicSlider = this.FindControl<Slider>("PaintCoatMetallicSlider");
+            _paintCoatRoughnessSlider = this.FindControl<Slider>("PaintCoatRoughnessSlider");
             _brushSizeInputTextBox = this.FindControl<TextBox>("BrushSizeInputTextBox");
             _brushOpacityInputTextBox = this.FindControl<TextBox>("BrushOpacityInputTextBox");
             _brushDarknessInputTextBox = this.FindControl<TextBox>("BrushDarknessInputTextBox");
             _brushSpreadInputTextBox = this.FindControl<TextBox>("BrushSpreadInputTextBox");
+            _paintCoatMetallicInputTextBox = this.FindControl<TextBox>("PaintCoatMetallicInputTextBox");
+            _paintCoatRoughnessInputTextBox = this.FindControl<TextBox>("PaintCoatRoughnessInputTextBox");
             _scratchWidthSlider = this.FindControl<Slider>("ScratchWidthSlider");
             _scratchDepthSlider = this.FindControl<Slider>("ScratchDepthSlider");
             _scratchResistanceSlider = this.FindControl<Slider>("ScratchResistanceSlider");
@@ -670,6 +680,8 @@ namespace KnobForge.App.Views
             _brushOpacityValueText = this.FindControl<TextBlock>("BrushOpacityValueText");
             _brushDarknessValueText = this.FindControl<TextBlock>("BrushDarknessValueText");
             _brushSpreadValueText = this.FindControl<TextBlock>("BrushSpreadValueText");
+            _paintCoatMetallicValueText = this.FindControl<TextBlock>("PaintCoatMetallicValueText");
+            _paintCoatRoughnessValueText = this.FindControl<TextBlock>("PaintCoatRoughnessValueText");
             _scratchWidthValueText = this.FindControl<TextBlock>("ScratchWidthValueText");
             _scratchDepthValueText = this.FindControl<TextBlock>("ScratchDepthValueText");
             _scratchResistanceValueText = this.FindControl<TextBlock>("ScratchResistanceValueText");
@@ -1036,6 +1048,7 @@ namespace KnobForge.App.Views
                 _shadowGraySlider == null || _shadowDiffuseInfluenceSlider == null ||
                 _brushPaintEnabledCheckBox == null || _brushPaintChannelCombo == null || _brushTypeCombo == null || _brushPaintColorPicker == null || _scratchAbrasionTypeCombo == null ||
                 _brushSizeSlider == null || _brushOpacitySlider == null || _brushDarknessSlider == null || _brushSpreadSlider == null ||
+                _paintCoatMetallicSlider == null || _paintCoatRoughnessSlider == null ||
                 _scratchWidthSlider == null || _scratchDepthSlider == null || _scratchResistanceSlider == null || _scratchDepthRampSlider == null ||
                 _scratchExposeColorRSlider == null || _scratchExposeColorGSlider == null || _scratchExposeColorBSlider == null)
             {
@@ -1210,6 +1223,8 @@ namespace KnobForge.App.Views
                 _brushOpacitySlider.IsEnabled = hasModel;
                 _brushDarknessSlider.IsEnabled = hasModel;
                 _brushSpreadSlider.IsEnabled = hasModel;
+                _paintCoatMetallicSlider.IsEnabled = hasModel;
+                _paintCoatRoughnessSlider.IsEnabled = hasModel;
                 _scratchWidthSlider.IsEnabled = hasModel;
                 _scratchDepthSlider.IsEnabled = hasModel;
                 _scratchResistanceSlider.IsEnabled = hasModel;
@@ -1235,6 +1250,16 @@ namespace KnobForge.App.Views
                 if (_brushSpreadInputTextBox != null)
                 {
                     _brushSpreadInputTextBox.IsEnabled = hasModel;
+                }
+
+                if (_paintCoatMetallicInputTextBox != null)
+                {
+                    _paintCoatMetallicInputTextBox.IsEnabled = hasModel;
+                }
+
+                if (_paintCoatRoughnessInputTextBox != null)
+                {
+                    _paintCoatRoughnessInputTextBox.IsEnabled = hasModel;
                 }
 
                 if (_scratchWidthInputTextBox != null)
@@ -1320,6 +1345,8 @@ namespace KnobForge.App.Views
                 _brushOpacitySlider.Value = project.BrushOpacity;
                 _brushDarknessSlider.Value = project.BrushDarkness;
                 _brushSpreadSlider.Value = project.BrushSpread;
+                _paintCoatMetallicSlider.Value = project.PaintCoatMetallic;
+                _paintCoatRoughnessSlider.Value = project.PaintCoatRoughness;
                 _scratchWidthSlider.Value = project.ScratchWidthPx;
                 _scratchDepthSlider.Value = project.ScratchDepth;
                 _scratchResistanceSlider.Value = project.ScratchDragResistance;

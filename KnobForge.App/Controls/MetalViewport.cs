@@ -1411,8 +1411,8 @@ namespace KnobForge.App.Controls
             uniforms.DebugBasisParams = new Vector4(
                 (float)(project?.BasisDebug ?? BasisDebugMode.Off),
                 Math.Clamp(project?.ScratchDepth ?? 0.30f, 0f, 1f),
-                0f,
-                0f);
+                Math.Clamp(project?.PaintCoatMetallic ?? 0.02f, 0f, 1f),
+                Math.Clamp(project?.PaintCoatRoughness ?? 0.56f, 0.04f, 1f));
 
             if (project != null)
             {
@@ -4271,14 +4271,8 @@ namespace KnobForge.App.Controls
                 _lastPaintHitMode = PaintHitMode.MeshHit;
                 return true;
             }
-
-            if (!TryMapPointerToPaintUvCpu(pointerDip, modelNode, collarNode, drawCollar, referenceRadius, out uv))
-            {
-                _lastPaintHitMode = PaintHitMode.Idle;
-                return false;
-            }
-
-            return true;
+            _lastPaintHitMode = PaintHitMode.Idle;
+            return false;
         }
 
         private bool TryMapPointerToPaintUvCpu(

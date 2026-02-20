@@ -50,6 +50,7 @@ namespace KnobForge.App.Views
                 : _project.BrushChannel;
             bool scratchMode = channel == PaintChannel.Scratch;
             bool colorMode = channel == PaintChannel.Color;
+            bool hasModel = GetModelNode() != null;
 
             if (_scratchContextBannerBorder != null)
             {
@@ -78,12 +79,14 @@ namespace KnobForge.App.Views
 
             if (_colorChannelPanel != null)
             {
-                _colorChannelPanel.IsVisible = !scratchMode && colorMode;
+                _colorChannelPanel.IsVisible = true;
+                _colorChannelPanel.Opacity = colorMode ? 1d : 0.88d;
+                _colorChannelPanel.IsEnabled = hasModel;
             }
 
             if (_brushPaintColorPicker != null)
             {
-                _brushPaintColorPicker.IsEnabled = !scratchMode && colorMode;
+                _brushPaintColorPicker.IsEnabled = hasModel && !scratchMode;
             }
 
             if (_brushAdvancedExpander != null && scratchMode && !_brushAdvancedExpander.IsExpanded)

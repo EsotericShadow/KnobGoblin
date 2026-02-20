@@ -22,6 +22,8 @@ namespace KnobForge.App.Views
                 _brushOpacitySlider == null ||
                 _brushDarknessSlider == null ||
                 _brushSpreadSlider == null ||
+                _paintCoatMetallicSlider == null ||
+                _paintCoatRoughnessSlider == null ||
                 _scratchWidthSlider == null ||
                 _scratchDepthSlider == null ||
                 _scratchResistanceSlider == null ||
@@ -73,6 +75,8 @@ namespace KnobForge.App.Views
             _project.BrushOpacity = (float)_brushOpacitySlider.Value;
             _project.BrushDarkness = (float)_brushDarknessSlider.Value;
             _project.BrushSpread = (float)_brushSpreadSlider.Value;
+            _project.PaintCoatMetallic = (float)_paintCoatMetallicSlider.Value;
+            _project.PaintCoatRoughness = (float)_paintCoatRoughnessSlider.Value;
             _project.PaintColor = ToVector3(_brushPaintColorPicker.Color);
             _project.ScratchWidthPx = (float)_scratchWidthSlider.Value;
             _project.ScratchDepth = (float)_scratchDepthSlider.Value;

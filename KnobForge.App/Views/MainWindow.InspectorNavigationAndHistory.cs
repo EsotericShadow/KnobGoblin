@@ -221,6 +221,8 @@ namespace KnobForge.App.Views
                 BrushOpacity = _project.BrushOpacity,
                 BrushSpread = _project.BrushSpread,
                 BrushDarkness = _project.BrushDarkness,
+                PaintCoatMetallic = _project.PaintCoatMetallic,
+                PaintCoatRoughness = _project.PaintCoatRoughness,
                 PaintColorX = _project.PaintColor.X,
                 PaintColorY = _project.PaintColor.Y,
                 PaintColorZ = _project.PaintColor.Z,
@@ -279,6 +281,8 @@ namespace KnobForge.App.Views
             _project.BrushOpacity = snapshot.BrushOpacity;
             _project.BrushSpread = snapshot.BrushSpread;
             _project.BrushDarkness = snapshot.BrushDarkness;
+            _project.PaintCoatMetallic = snapshot.PaintCoatMetallic;
+            _project.PaintCoatRoughness = snapshot.PaintCoatRoughness;
             _project.PaintColor = new(snapshot.PaintColorX, snapshot.PaintColorY, snapshot.PaintColorZ);
             _project.ScratchWidthPx = snapshot.ScratchWidthPx;
             _project.ScratchDepth = snapshot.ScratchDepth;
@@ -671,6 +675,8 @@ namespace KnobForge.App.Views
             public float BrushOpacity { get; set; }
             public float BrushSpread { get; set; }
             public float BrushDarkness { get; set; }
+            public float PaintCoatMetallic { get; set; } = 0.02f;
+            public float PaintCoatRoughness { get; set; } = 0.56f;
             public float PaintColorX { get; set; }
             public float PaintColorY { get; set; }
             public float PaintColorZ { get; set; }

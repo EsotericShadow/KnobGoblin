@@ -616,7 +616,7 @@
                                            FontSize="11"
                                            Foreground="#A9B4BF"/>
 
-                                <Expander Header="Brush Controls" IsExpanded="True">
+                                <Expander x:Name="BrushAdvancedExpander" Header="Brush Controls" IsExpanded="True">
                                     <StackPanel Spacing="6" Margin="0,6,0,0">
                                         <CheckBox x:Name="BrushPaintEnabledCheckBox"
                                                   Content="Enable Surface Painting"/>
@@ -624,118 +624,160 @@
                                         <TextBlock Text="Paint Channel"/>
                                         <ComboBox x:Name="BrushPaintChannelCombo"/>
 
-                                        <TextBlock Text="Brush Type (Paint)"/>
-                                        <ComboBox x:Name="BrushTypeCombo"/>
+                                        <Border x:Name="ScratchContextBannerBorder"
+                                                Background="#27303A"
+                                                BorderBrush="#3B4653"
+                                                BorderThickness="1"
+                                                CornerRadius="6"
+                                                Padding="8"
+                                                IsVisible="False">
+                                            <TextBlock Text="Scratch mode active"
+                                                       FontSize="11"
+                                                       Foreground="#D8E2EA"/>
+                                        </Border>
 
                                         <StackPanel x:Name="ColorChannelPanel" Spacing="4">
                                             <TextBlock Text="Color Paint Brush Color"/>
                                             <colorpicker:ColorPicker x:Name="BrushPaintColorPicker"
                                                                      IsAlphaEnabled="False"
                                                                      IsAlphaVisible="False"
-                                                                     IsHexInputVisible="True"/>
+                                                                     IsHexInputVisible="True"
+                                                                     MinHeight="34"/>
+                                            <TextBlock Text="Used when Paint Channel is Color"
+                                                       FontSize="11"
+                                                       Foreground="#A9B4BF"/>
                                         </StackPanel>
 
-                                        <TextBlock Text="Brush Size (px)"/>
-                                        <Slider x:Name="BrushSizeSlider" Minimum="1" Maximum="320"/>
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <TextBlock x:Name="BrushSizeValueText" Width="88" VerticalAlignment="Center"/>
-                                            <TextBox x:Name="BrushSizeInputTextBox"
-                                                     Width="96"
-                                                     HorizontalContentAlignment="Right"/>
+                                        <StackPanel x:Name="GeneralPaintPrimaryPanel" Spacing="6">
+                                            <TextBlock Text="Brush Type (Paint)"/>
+                                            <ComboBox x:Name="BrushTypeCombo"/>
+
+                                            <TextBlock Text="Brush Size (px)"/>
+                                            <Slider x:Name="BrushSizeSlider" Minimum="1" Maximum="320"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock x:Name="BrushSizeValueText" Width="88" VerticalAlignment="Center"/>
+                                                <TextBox x:Name="BrushSizeInputTextBox"
+                                                         Width="96"
+                                                         HorizontalContentAlignment="Right"/>
+                                            </StackPanel>
+
+                                            <TextBlock Text="Brush Opacity"/>
+                                            <Slider x:Name="BrushOpacitySlider" Minimum="0" Maximum="1"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock x:Name="BrushOpacityValueText" Width="88" VerticalAlignment="Center"/>
+                                                <TextBox x:Name="BrushOpacityInputTextBox"
+                                                         Width="96"
+                                                         HorizontalContentAlignment="Right"/>
+                                            </StackPanel>
                                         </StackPanel>
 
-                                        <TextBlock Text="Brush Opacity"/>
-                                        <Slider x:Name="BrushOpacitySlider" Minimum="0" Maximum="1"/>
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <TextBlock x:Name="BrushOpacityValueText" Width="88" VerticalAlignment="Center"/>
-                                            <TextBox x:Name="BrushOpacityInputTextBox"
-                                                     Width="96"
-                                                     HorizontalContentAlignment="Right"/>
+                                        <StackPanel x:Name="GeneralPaintAdvancedPanel" Spacing="6">
+                                            <TextBlock Text="Brush Darkness"/>
+                                            <Slider x:Name="BrushDarknessSlider" Minimum="0" Maximum="1"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock x:Name="BrushDarknessValueText" Width="88" VerticalAlignment="Center"/>
+                                                <TextBox x:Name="BrushDarknessInputTextBox"
+                                                         Width="96"
+                                                         HorizontalContentAlignment="Right"/>
+                                            </StackPanel>
+
+                                            <TextBlock Text="Spray Random Spread"/>
+                                            <Slider x:Name="BrushSpreadSlider" Minimum="0" Maximum="1"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock x:Name="BrushSpreadValueText" Width="88" VerticalAlignment="Center"/>
+                                                <TextBox x:Name="BrushSpreadInputTextBox"
+                                                         Width="96"
+                                                         HorizontalContentAlignment="Right"/>
+                                            </StackPanel>
+
+                                            <TextBlock Text="Paint Coat Metallic"/>
+                                            <Slider x:Name="PaintCoatMetallicSlider" Minimum="0" Maximum="1"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock x:Name="PaintCoatMetallicValueText" Width="88" VerticalAlignment="Center"/>
+                                                <TextBox x:Name="PaintCoatMetallicInputTextBox"
+                                                         Width="96"
+                                                         HorizontalContentAlignment="Right"/>
+                                            </StackPanel>
+
+                                            <TextBlock Text="Paint Coat Roughness"/>
+                                            <Slider x:Name="PaintCoatRoughnessSlider" Minimum="0.04" Maximum="1"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock x:Name="PaintCoatRoughnessValueText" Width="88" VerticalAlignment="Center"/>
+                                                <TextBox x:Name="PaintCoatRoughnessInputTextBox"
+                                                         Width="96"
+                                                         HorizontalContentAlignment="Right"/>
+                                            </StackPanel>
                                         </StackPanel>
 
-                                        <TextBlock Text="Brush Darkness"/>
-                                        <Slider x:Name="BrushDarknessSlider" Minimum="0" Maximum="1"/>
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <TextBlock x:Name="BrushDarknessValueText" Width="88" VerticalAlignment="Center"/>
-                                            <TextBox x:Name="BrushDarknessInputTextBox"
-                                                     Width="96"
-                                                     HorizontalContentAlignment="Right"/>
+                                        <StackPanel x:Name="ScratchPrimaryPanel" Spacing="6" IsVisible="False">
+                                            <Separator Margin="0,4,0,4"/>
+                                            <TextBlock Text="Abrasion Type (Scratch)"/>
+                                            <ComboBox x:Name="ScratchAbrasionTypeCombo"/>
+
+                                            <TextBlock Text="Scratch Width (px)"/>
+                                            <Slider x:Name="ScratchWidthSlider" Minimum="1" Maximum="320"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock x:Name="ScratchWidthValueText" Width="88" VerticalAlignment="Center"/>
+                                                <TextBox x:Name="ScratchWidthInputTextBox"
+                                                         Width="96"
+                                                         HorizontalContentAlignment="Right"/>
+                                            </StackPanel>
+
+                                            <TextBlock Text="Scratch Depth"/>
+                                            <Slider x:Name="ScratchDepthSlider" Minimum="0" Maximum="1"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock x:Name="ScratchDepthValueText" Width="88" VerticalAlignment="Center"/>
+                                                <TextBox x:Name="ScratchDepthInputTextBox"
+                                                         Width="96"
+                                                         HorizontalContentAlignment="Right"/>
+                                            </StackPanel>
                                         </StackPanel>
 
-                                        <TextBlock Text="Spray Random Spread"/>
-                                        <Slider x:Name="BrushSpreadSlider" Minimum="0" Maximum="1"/>
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <TextBlock x:Name="BrushSpreadValueText" Width="88" VerticalAlignment="Center"/>
-                                            <TextBox x:Name="BrushSpreadInputTextBox"
-                                                     Width="96"
-                                                     HorizontalContentAlignment="Right"/>
-                                        </StackPanel>
+                                        <StackPanel x:Name="ScratchAdvancedPanel" Spacing="6" IsVisible="False">
+                                            <TextBlock Text="Scratch Drag Resistance"/>
+                                            <Slider x:Name="ScratchResistanceSlider" Minimum="0" Maximum="0.98"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock x:Name="ScratchResistanceValueText" Width="88" VerticalAlignment="Center"/>
+                                                <TextBox x:Name="ScratchResistanceInputTextBox"
+                                                         Width="96"
+                                                         HorizontalContentAlignment="Right"/>
+                                            </StackPanel>
 
-                                        <Separator Margin="0,4,0,4"/>
-                                        <TextBlock Text="Abrasion Type (Scratch)"/>
-                                        <ComboBox x:Name="ScratchAbrasionTypeCombo"/>
+                                            <TextBlock Text="Option Drag Depth Ramp"/>
+                                            <Slider x:Name="ScratchDepthRampSlider" Minimum="0" Maximum="0.02"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock x:Name="ScratchDepthRampValueText" Width="88" VerticalAlignment="Center"/>
+                                                <TextBox x:Name="ScratchDepthRampInputTextBox"
+                                                         Width="96"
+                                                         HorizontalContentAlignment="Right"/>
+                                            </StackPanel>
 
-                                        <TextBlock Text="Scratch Width (px)"/>
-                                        <Slider x:Name="ScratchWidthSlider" Minimum="1" Maximum="320"/>
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <TextBlock x:Name="ScratchWidthValueText" Width="88" VerticalAlignment="Center"/>
-                                            <TextBox x:Name="ScratchWidthInputTextBox"
-                                                     Width="96"
-                                                     HorizontalContentAlignment="Right"/>
-                                        </StackPanel>
-
-                                        <TextBlock Text="Scratch Depth"/>
-                                        <Slider x:Name="ScratchDepthSlider" Minimum="0" Maximum="1"/>
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <TextBlock x:Name="ScratchDepthValueText" Width="88" VerticalAlignment="Center"/>
-                                            <TextBox x:Name="ScratchDepthInputTextBox"
-                                                     Width="96"
-                                                     HorizontalContentAlignment="Right"/>
-                                        </StackPanel>
-
-                                        <TextBlock Text="Scratch Drag Resistance"/>
-                                        <Slider x:Name="ScratchResistanceSlider" Minimum="0" Maximum="0.98"/>
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <TextBlock x:Name="ScratchResistanceValueText" Width="88" VerticalAlignment="Center"/>
-                                            <TextBox x:Name="ScratchResistanceInputTextBox"
-                                                     Width="96"
-                                                     HorizontalContentAlignment="Right"/>
-                                        </StackPanel>
-
-                                        <TextBlock Text="Option Drag Depth Ramp"/>
-                                        <Slider x:Name="ScratchDepthRampSlider" Minimum="0" Maximum="0.02"/>
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <TextBlock x:Name="ScratchDepthRampValueText" Width="88" VerticalAlignment="Center"/>
-                                            <TextBox x:Name="ScratchDepthRampInputTextBox"
-                                                     Width="96"
-                                                     HorizontalContentAlignment="Right"/>
-                                        </StackPanel>
-
-                                        <Separator Margin="0,4,0,4"/>
-                                        <TextBlock Text="Scratch Exposed Color"/>
-                                        <TextBlock Text="R"/>
-                                        <Slider x:Name="ScratchExposeColorRSlider" Minimum="0" Maximum="1"/>
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <TextBlock x:Name="ScratchExposeColorRValueText" Width="88" VerticalAlignment="Center"/>
-                                            <TextBox x:Name="ScratchExposeColorRInputTextBox"
-                                                     Width="96"
-                                                     HorizontalContentAlignment="Right"/>
-                                        </StackPanel>
-                                        <TextBlock Text="G"/>
-                                        <Slider x:Name="ScratchExposeColorGSlider" Minimum="0" Maximum="1"/>
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <TextBlock x:Name="ScratchExposeColorGValueText" Width="88" VerticalAlignment="Center"/>
-                                            <TextBox x:Name="ScratchExposeColorGInputTextBox"
-                                                     Width="96"
-                                                     HorizontalContentAlignment="Right"/>
-                                        </StackPanel>
-                                        <TextBlock Text="B"/>
-                                        <Slider x:Name="ScratchExposeColorBSlider" Minimum="0" Maximum="1"/>
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <TextBlock x:Name="ScratchExposeColorBValueText" Width="88" VerticalAlignment="Center"/>
-                                            <TextBox x:Name="ScratchExposeColorBInputTextBox"
-                                                     Width="96"
-                                                     HorizontalContentAlignment="Right"/>
+                                            <Separator Margin="0,4,0,4"/>
+                                            <TextBlock Text="Scratch Exposed Color"/>
+                                            <TextBlock Text="R"/>
+                                            <Slider x:Name="ScratchExposeColorRSlider" Minimum="0" Maximum="1"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock x:Name="ScratchExposeColorRValueText" Width="88" VerticalAlignment="Center"/>
+                                                <TextBox x:Name="ScratchExposeColorRInputTextBox"
+                                                         Width="96"
+                                                         HorizontalContentAlignment="Right"/>
+                                            </StackPanel>
+                                            <TextBlock Text="G"/>
+                                            <Slider x:Name="ScratchExposeColorGSlider" Minimum="0" Maximum="1"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock x:Name="ScratchExposeColorGValueText" Width="88" VerticalAlignment="Center"/>
+                                                <TextBox x:Name="ScratchExposeColorGInputTextBox"
+                                                         Width="96"
+                                                         HorizontalContentAlignment="Right"/>
+                                            </StackPanel>
+                                            <TextBlock Text="B"/>
+                                            <Slider x:Name="ScratchExposeColorBSlider" Minimum="0" Maximum="1"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock x:Name="ScratchExposeColorBValueText" Width="88" VerticalAlignment="Center"/>
+                                                <TextBox x:Name="ScratchExposeColorBInputTextBox"
+                                                         Width="96"
+                                                         HorizontalContentAlignment="Right"/>
+                                            </StackPanel>
                                         </StackPanel>
 
                                         <Button x:Name="ClearPaintMaskButton"

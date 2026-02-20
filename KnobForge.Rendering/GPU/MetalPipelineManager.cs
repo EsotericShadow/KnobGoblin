@@ -788,6 +788,8 @@ fragment float4 fragment_main(
     float wearAmount = clamp(uniforms.weatherParams.y, 0.0, 1.0);
     float gunkAmount = clamp(uniforms.weatherParams.z, 0.0, 1.0);
     float brushDarkness = clamp(uniforms.weatherParams.w, 0.0, 1.0);
+    float paintCoatMetallic = clamp(uniforms.debugBasisParams.z, 0.0, 1.0);
+    float paintCoatRoughness = clamp(uniforms.debugBasisParams.w, 0.04, 1.0);
     float3 scratchExposeColor = Clamp01(uniforms.scratchExposeColorAndStrength.xyz);
     float scratchExposeStrength = clamp(uniforms.scratchExposeColorAndStrength.w, 0.0, 1.0);
     float microInfluence = clamp(uniforms.microDetailParams.x, 0.0, 1.0);
@@ -923,7 +925,17 @@ fragment float4 fragment_main(
     }
 
     float colorPaintMask = clamp(colorPaintSample.w, 0.0, 1.0);
-    baseColor = mix(baseColor, Clamp01(colorPaintSample.xyz), colorPaintMask);
+    float3 colorPaintBase = float3(0.0);
+    if (colorPaintMask > 1e-5)
+    {
+        // Color paint texture is stored premultiplied; recover straight RGB before shading.
+        colorPaintBase = Clamp01(colorPaintSample.xyz / colorPaintMask);
+    }
+    baseColor = mix(baseColor, colorPaintBase, colorPaintMask);
+    // Make painted color read as a coating layer rather than bare metal.
+    float paintCoatBlend = smoothstep(0.0, 0.85, colorPaintMask);
+    roughness = mix(roughness, paintCoatRoughness, paintCoatBlend);
+    metallic = mix(metallic, paintCoatMetallic, paintCoatBlend);
 
     float darknessGain = mix(0.45, 1.45, brushDarkness);
     float rustRaw = clamp(paintSample.x, 0.0, 1.0);

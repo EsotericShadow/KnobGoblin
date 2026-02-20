@@ -100,6 +100,8 @@ namespace KnobForge.Core
         private float _brushOpacity = 0.50f;
         private float _brushSpread = 0.35f;
         private float _brushDarkness = 0.58f;
+        private float _paintCoatMetallic = 0.02f;
+        private float _paintCoatRoughness = 0.56f;
         private Vector3 _paintColor = new(0.85f, 0.24f, 0.24f);
         private Vector3 _scratchExposeColor = new(0.88f, 0.88f, 0.90f);
         private float _scratchWidthPx = 20f;
@@ -195,6 +197,16 @@ namespace KnobForge.Core
         {
             get => _brushDarkness;
             set => _brushDarkness = Math.Clamp(value, 0f, 1f);
+        }
+        public float PaintCoatMetallic
+        {
+            get => _paintCoatMetallic;
+            set => _paintCoatMetallic = Math.Clamp(value, 0f, 1f);
+        }
+        public float PaintCoatRoughness
+        {
+            get => _paintCoatRoughness;
+            set => _paintCoatRoughness = Math.Clamp(value, 0.04f, 1f);
         }
         public Vector3 PaintColor
         {

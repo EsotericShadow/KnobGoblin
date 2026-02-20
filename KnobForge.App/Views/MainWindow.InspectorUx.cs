@@ -54,6 +54,8 @@ namespace KnobForge.App.Views
             RegisterSearchItem(_brushPaintColorPicker, "Paint Color", "paint", "color", "picker", "rgb");
             RegisterSearchItem(_brushSizeSlider, "Brush Size", "brush", "size");
             RegisterSearchItem(_brushOpacitySlider, "Brush Opacity", "brush", "opacity");
+            RegisterSearchItem(_paintCoatMetallicSlider, "Paint Coat Metallic", "paint", "coat", "metallic", "layer");
+            RegisterSearchItem(_paintCoatRoughnessSlider, "Paint Coat Roughness", "paint", "coat", "roughness", "hardness", "layer");
             RegisterSearchItem(_scratchAbrasionTypeCombo, "Scratch Abrasion Type", "scratch", "abrasion", "tool");
             RegisterSearchItem(_scratchWidthSlider, "Scratch Width", "scratch", "width");
             RegisterSearchItem(_scratchDepthSlider, "Scratch Depth", "scratch", "depth", "carve");

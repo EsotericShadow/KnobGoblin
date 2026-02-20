@@ -60,6 +60,7 @@ namespace KnobForge.App.Views
                 _shadowGraySlider == null || _shadowDiffuseInfluenceSlider == null ||
                 _brushPaintEnabledCheckBox == null || _brushPaintChannelCombo == null || _brushTypeCombo == null || _brushPaintColorPicker == null || _scratchAbrasionTypeCombo == null ||
                 _brushSizeSlider == null || _brushOpacitySlider == null || _brushDarknessSlider == null || _brushSpreadSlider == null ||
+                _paintCoatMetallicSlider == null || _paintCoatRoughnessSlider == null ||
                 _scratchWidthSlider == null || _scratchDepthSlider == null || _scratchResistanceSlider == null || _scratchDepthRampSlider == null ||
                 _scratchExposeColorRSlider == null || _scratchExposeColorGSlider == null || _scratchExposeColorBSlider == null ||
                 _clearPaintMaskButton == null ||
@@ -99,6 +100,7 @@ namespace KnobForge.App.Views
                 _shadowScaleValueText == null || _shadowQualityValueText == null || _shadowGrayValueText == null ||
                 _shadowDiffuseInfluenceValueText == null ||
                 _brushSizeValueText == null || _brushOpacityValueText == null || _brushDarknessValueText == null || _brushSpreadValueText == null ||
+                _paintCoatMetallicValueText == null || _paintCoatRoughnessValueText == null ||
                 _scratchWidthValueText == null || _scratchDepthValueText == null || _scratchResistanceValueText == null || _scratchDepthRampValueText == null ||
                 _scratchExposeColorRValueText == null || _scratchExposeColorGValueText == null || _scratchExposeColorBValueText == null)
             {
@@ -326,6 +328,8 @@ namespace KnobForge.App.Views
             _brushOpacitySlider.PropertyChanged += OnPaintBrushSettingsChanged;
             _brushDarknessSlider.PropertyChanged += OnPaintBrushSettingsChanged;
             _brushSpreadSlider.PropertyChanged += OnPaintBrushSettingsChanged;
+            _paintCoatMetallicSlider.PropertyChanged += OnPaintBrushSettingsChanged;
+            _paintCoatRoughnessSlider.PropertyChanged += OnPaintBrushSettingsChanged;
             _scratchWidthSlider.PropertyChanged += OnPaintBrushSettingsChanged;
             _scratchDepthSlider.PropertyChanged += OnPaintBrushSettingsChanged;
             _scratchResistanceSlider.PropertyChanged += OnPaintBrushSettingsChanged;

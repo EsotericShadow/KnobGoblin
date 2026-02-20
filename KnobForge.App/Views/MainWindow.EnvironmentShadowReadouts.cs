@@ -556,6 +556,16 @@ namespace KnobForge.App.Views
                 _brushSpreadValueText.Text = $"{_brushSpreadSlider.Value:0.00}";
             }
 
+            if (_paintCoatMetallicSlider != null && _paintCoatMetallicValueText != null)
+            {
+                _paintCoatMetallicValueText.Text = $"{_paintCoatMetallicSlider.Value:0.00}";
+            }
+
+            if (_paintCoatRoughnessSlider != null && _paintCoatRoughnessValueText != null)
+            {
+                _paintCoatRoughnessValueText.Text = $"{_paintCoatRoughnessSlider.Value:0.00}";
+            }
+
             if (_scratchWidthSlider != null && _scratchWidthValueText != null)
             {
                 _scratchWidthValueText.Text = $"{_scratchWidthSlider.Value:0.0}px";

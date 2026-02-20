@@ -35,6 +35,8 @@ namespace KnobForge.App.Views
             WirePrecisionTextEntry(_brushOpacityInputTextBox, _brushOpacitySlider, "0.000");
             WirePrecisionTextEntry(_brushDarknessInputTextBox, _brushDarknessSlider, "0.000");
             WirePrecisionTextEntry(_brushSpreadInputTextBox, _brushSpreadSlider, "0.000");
+            WirePrecisionTextEntry(_paintCoatMetallicInputTextBox, _paintCoatMetallicSlider, "0.000");
+            WirePrecisionTextEntry(_paintCoatRoughnessInputTextBox, _paintCoatRoughnessSlider, "0.000");
             WirePrecisionTextEntry(_scratchWidthInputTextBox, _scratchWidthSlider, "0.0");
             WirePrecisionTextEntry(_scratchDepthInputTextBox, _scratchDepthSlider, "0.000");
             WirePrecisionTextEntry(_scratchResistanceInputTextBox, _scratchResistanceSlider, "0.000");
@@ -186,6 +188,8 @@ namespace KnobForge.App.Views
             SyncPrecisionEntry(_brushOpacityInputTextBox, _brushOpacitySlider);
             SyncPrecisionEntry(_brushDarknessInputTextBox, _brushDarknessSlider);
             SyncPrecisionEntry(_brushSpreadInputTextBox, _brushSpreadSlider);
+            SyncPrecisionEntry(_paintCoatMetallicInputTextBox, _paintCoatMetallicSlider);
+            SyncPrecisionEntry(_paintCoatRoughnessInputTextBox, _paintCoatRoughnessSlider);
             SyncPrecisionEntry(_scratchWidthInputTextBox, _scratchWidthSlider);
             SyncPrecisionEntry(_scratchDepthInputTextBox, _scratchDepthSlider);
             SyncPrecisionEntry(_scratchResistanceInputTextBox, _scratchResistanceSlider);
