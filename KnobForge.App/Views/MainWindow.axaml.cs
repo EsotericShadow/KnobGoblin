@@ -198,6 +198,13 @@ namespace KnobForge.App.Views
             private readonly ComboBox? _brushTypeCombo;
             private readonly ColorPicker? _brushPaintColorPicker;
             private readonly StackPanel? _colorChannelPanel;
+            private readonly ListBox? _paintLayerListBox;
+            private readonly TextBox? _paintLayerNameTextBox;
+            private readonly Button? _addPaintLayerButton;
+            private readonly Button? _renamePaintLayerButton;
+            private readonly Button? _deletePaintLayerButton;
+            private readonly CheckBox? _focusPaintLayerCheckBox;
+            private readonly Button? _clearPaintLayerFocusButton;
             private readonly ComboBox? _scratchAbrasionTypeCombo;
             private readonly Border? _scratchContextBannerBorder;
             private readonly StackPanel? _scratchPrimaryPanel;
@@ -242,6 +249,9 @@ namespace KnobForge.App.Views
         private readonly TextBox? _scratchExposeMetallicInputTextBox;
         private readonly TextBox? _scratchExposeRoughnessInputTextBox;
         private readonly Button? _clearPaintMaskButton;
+        private readonly Button? _openProjectButton;
+        private readonly Button? _saveProjectButton;
+        private readonly Button? _saveProjectAsButton;
         private readonly Button? _renderButton;
         private readonly TextBlock? _rotationValueText;
         private readonly TextBlock? _lightXValueText;
@@ -355,12 +365,20 @@ namespace KnobForge.App.Views
             private readonly ObservableCollection<SceneNode> _sceneNodes;
             private readonly List<UserReferenceProfile> _userReferenceProfiles = new();
             private readonly List<ReferenceStyleOption> _referenceStyleOptions = new();
+            private readonly List<PaintLayerListItem> _paintLayerItems = new();
             private string? _selectedUserReferenceProfileName;
+            private string? _currentProjectFilePath;
             private int _uiRefreshDepth;
             private bool _updatingUi;
-        private bool _sceneRefreshDeferredPending;
+            private bool _sceneRefreshDeferredPending;
 
-        private bool IsUiRefreshing => _uiRefreshDepth > 0;
+            private enum InspectorRefreshTabPolicy
+            {
+                PreserveCurrentTab = 0,
+                FollowSceneSelection = 1
+            }
+
+            private bool IsUiRefreshing => _uiRefreshDepth > 0;
 
         private void WithUiRefreshSuppressed(Action action)
         {
@@ -565,6 +583,13 @@ namespace KnobForge.App.Views
             _brushTypeCombo = this.FindControl<ComboBox>("BrushTypeCombo");
             _brushPaintColorPicker = this.FindControl<ColorPicker>("BrushPaintColorPicker");
             _colorChannelPanel = this.FindControl<StackPanel>("ColorChannelPanel");
+            _paintLayerListBox = this.FindControl<ListBox>("PaintLayerListBox");
+            _paintLayerNameTextBox = this.FindControl<TextBox>("PaintLayerNameTextBox");
+            _addPaintLayerButton = this.FindControl<Button>("AddPaintLayerButton");
+            _renamePaintLayerButton = this.FindControl<Button>("RenamePaintLayerButton");
+            _deletePaintLayerButton = this.FindControl<Button>("DeletePaintLayerButton");
+            _focusPaintLayerCheckBox = this.FindControl<CheckBox>("FocusPaintLayerCheckBox");
+            _clearPaintLayerFocusButton = this.FindControl<Button>("ClearPaintLayerFocusButton");
             _scratchAbrasionTypeCombo = this.FindControl<ComboBox>("ScratchAbrasionTypeCombo");
             _scratchContextBannerBorder = this.FindControl<Border>("ScratchContextBannerBorder");
             _scratchPrimaryPanel = this.FindControl<StackPanel>("ScratchPrimaryPanel");
@@ -609,6 +634,9 @@ namespace KnobForge.App.Views
             _scratchExposeMetallicInputTextBox = this.FindControl<TextBox>("ScratchExposeMetallicInputTextBox");
             _scratchExposeRoughnessInputTextBox = this.FindControl<TextBox>("ScratchExposeRoughnessInputTextBox");
             _clearPaintMaskButton = this.FindControl<Button>("ClearPaintMaskButton");
+            _openProjectButton = this.FindControl<Button>("OpenProjectButton");
+            _saveProjectButton = this.FindControl<Button>("SaveProjectButton");
+            _saveProjectAsButton = this.FindControl<Button>("SaveProjectAsButton");
             _renderButton = this.FindControl<Button>("RenderButton");
 
             _rotationValueText = this.FindControl<TextBlock>("RotationValueText");
@@ -735,6 +763,7 @@ namespace KnobForge.App.Views
             InitializeInspectorUx();
             InitializeUndoRedoSupport();
             WireOpenedHandlers();
+            UpdateWindowTitleForProject();
         }
         private async void OnRenderButtonClick(object? sender, RoutedEventArgs e)
         {
@@ -781,17 +810,29 @@ namespace KnobForge.App.Views
             NotifyProjectStateChanged();
         }
 
-        private void NotifyProjectStateChanged()
+        private void NotifyProjectStateChanged(
+            InspectorRefreshTabPolicy tabPolicy = InspectorRefreshTabPolicy.PreserveCurrentTab,
+            bool syncSelectionFromInspectorContext = true)
         {
             _metalViewport?.InvalidateGpu();
+            if (syncSelectionFromInspectorContext)
+            {
+                TryAdoptSceneSelectionFromInspectorContext();
+            }
+
             RefreshSceneTree();
-            RefreshInspectorFromProject();
+            RefreshInspectorFromProject(tabPolicy);
             CaptureUndoSnapshotIfChanged();
         }
 
-        private void NotifyRenderOnly()
+        private void NotifyRenderOnly(bool syncSelectionFromInspectorContext = true)
         {
             _metalViewport?.InvalidateGpu();
+            if (syncSelectionFromInspectorContext && TryAdoptSceneSelectionFromInspectorContext())
+            {
+                RefreshSceneTree();
+            }
+
             UpdateReadouts();
             CaptureUndoSnapshotIfChanged();
         }
@@ -1038,7 +1079,7 @@ namespace KnobForge.App.Views
             UpdateCollarMeshPathFeedback(preset, _collarMeshPathTextBox.Text);
         }
 
-        private void RefreshInspectorFromProject()
+        private void RefreshInspectorFromProject(InspectorRefreshTabPolicy tabPolicy = InspectorRefreshTabPolicy.PreserveCurrentTab)
         {
             if (_lightingModeCombo == null || _lightListBox == null ||
                 _removeLightButton == null || _rotationSlider == null || _lightTypeCombo == null ||
@@ -1087,6 +1128,9 @@ namespace KnobForge.App.Views
                 return;
             }
 
+            RememberInspectorPresentationStateForCurrentTab();
+            InspectorFocusState? preservedFocus = CaptureInspectorFocusStateForCurrentTab();
+            TabItem? preservedTab = _inspectorTabControl?.SelectedItem as TabItem;
             _updatingUi = true;
             try
             {
@@ -1458,12 +1502,33 @@ namespace KnobForge.App.Views
                     _specularPowerSlider.Value = selectedLight.SpecularPower;
                 }
 
-                SelectInspectorTabForSceneNode(_project.SelectedNode);
+                ApplyInspectorTabPolicy(tabPolicy, preservedTab);
+                RestoreInspectorPresentationStateForCurrentTab();
+                RestoreInspectorFocusStateForCurrentTab(preservedFocus);
                 UpdateReadouts();
             }
             finally
             {
                 _updatingUi = false;
+            }
+        }
+
+        private void ApplyInspectorTabPolicy(InspectorRefreshTabPolicy tabPolicy, TabItem? preservedTab)
+        {
+            if (_inspectorTabControl == null)
+            {
+                return;
+            }
+
+            if (tabPolicy == InspectorRefreshTabPolicy.FollowSceneSelection || preservedTab == null)
+            {
+                SelectInspectorTabForSceneNode(_project.SelectedNode);
+                return;
+            }
+
+            if (!ReferenceEquals(_inspectorTabControl.SelectedItem, preservedTab))
+            {
+                _inspectorTabControl.SelectedItem = preservedTab;
             }
         }
 

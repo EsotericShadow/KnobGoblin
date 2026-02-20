@@ -21,10 +21,22 @@
                            FontSize="14"
                            FontWeight="SemiBold"
                            Foreground="#E6EEF5"/>
-                <Button x:Name="RenderButton"
-                        DockPanel.Dock="Right"
-                        Content="Render..."
-                        MinWidth="96"/>
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            Spacing="8">
+                    <Button x:Name="OpenProjectButton"
+                            Content="Open..."
+                            MinWidth="82"/>
+                    <Button x:Name="SaveProjectButton"
+                            Content="Save"
+                            MinWidth="74"/>
+                    <Button x:Name="SaveProjectAsButton"
+                            Content="Save As..."
+                            MinWidth="94"/>
+                    <Button x:Name="RenderButton"
+                            Content="Render..."
+                            MinWidth="96"/>
+                </StackPanel>
             </DockPanel>
         </Border>
 
@@ -620,6 +632,40 @@
                                     <StackPanel Spacing="6" Margin="0,6,0,0">
                                         <CheckBox x:Name="BrushPaintEnabledCheckBox"
                                                   Content="Enable Surface Painting"/>
+
+                                        <Border Background="#1D242C"
+                                                BorderBrush="#354352"
+                                                BorderThickness="1"
+                                                CornerRadius="6"
+                                                Padding="8">
+                                            <StackPanel Spacing="6">
+                                                <TextBlock Text="Paint Layers"
+                                                           FontSize="12"
+                                                           FontWeight="SemiBold"/>
+                                                <ListBox x:Name="PaintLayerListBox"
+                                                         Height="112"/>
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <Button x:Name="AddPaintLayerButton"
+                                                            Content="Add Layer"
+                                                            MinWidth="92"/>
+                                                    <Button x:Name="DeletePaintLayerButton"
+                                                            Content="Delete Layer"
+                                                            MinWidth="100"/>
+                                                </StackPanel>
+                                                <TextBox x:Name="PaintLayerNameTextBox"
+                                                         Watermark="Selected layer name"/>
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <Button x:Name="RenamePaintLayerButton"
+                                                            Content="Rename"
+                                                            MinWidth="84"/>
+                                                    <Button x:Name="ClearPaintLayerFocusButton"
+                                                            Content="Show All Layers"
+                                                            MinWidth="118"/>
+                                                </StackPanel>
+                                                <CheckBox x:Name="FocusPaintLayerCheckBox"
+                                                          Content="Focus selected layer (dim others 25%)"/>
+                                            </StackPanel>
+                                        </Border>
 
                                         <TextBlock Text="Paint Channel"/>
                                         <ComboBox x:Name="BrushPaintChannelCombo"/>

@@ -213,6 +213,9 @@ namespace KnobForge.App.Views
                 ShadowQuality = _project.ShadowQuality,
                 ShadowGray = _project.ShadowGray,
                 ShadowDiffuseInfluence = _project.ShadowDiffuseInfluence,
+                PaintHistoryRevision = _metalViewport?.PaintHistoryRevision ?? 0,
+                ActivePaintLayerIndex = _metalViewport?.ActivePaintLayerIndex ?? 0,
+                FocusedPaintLayerIndex = _metalViewport?.FocusedPaintLayerIndex ?? -1,
                 BrushPaintingEnabled = _project.BrushPaintingEnabled,
                 BrushType = _project.BrushType,
                 BrushChannel = _project.BrushChannel,
@@ -306,6 +309,14 @@ namespace KnobForge.App.Views
             _project.SpiralNormalLodFadeStart = snapshot.SpiralNormalLodFadeStart;
             _project.SpiralNormalLodFadeEnd = snapshot.SpiralNormalLodFadeEnd;
             _project.SpiralRoughnessLodBoost = snapshot.SpiralRoughnessLodBoost;
+
+            if (_metalViewport != null)
+            {
+                _metalViewport.RestorePaintHistoryRevision(snapshot.PaintHistoryRevision);
+                _metalViewport.SetActivePaintLayer(snapshot.ActivePaintLayerIndex);
+                _metalViewport.SetFocusedPaintLayer(snapshot.FocusedPaintLayerIndex);
+                RefreshPaintLayerListFromViewport(preferActiveSelection: true);
+            }
 
             ApplyLightStates(snapshot.Lights, snapshot.SelectedLightIndex);
 
@@ -563,6 +574,67 @@ namespace KnobForge.App.Views
             };
         }
 
+        private bool TryAdoptSceneSelectionFromInspectorContext()
+        {
+            if (_updatingUi || _inspectorTabControl == null || _inspectorTabControl.SelectedItem is not TabItem selectedTab)
+            {
+                return false;
+            }
+
+            SceneNode? desiredNode = null;
+            if (ReferenceEquals(selectedTab, _lightingTabItem))
+            {
+                desiredNode = ResolveSelectedLightSceneNode();
+            }
+            else if (ReferenceEquals(selectedTab, _modelTabItem) || ReferenceEquals(selectedTab, _brushTabItem))
+            {
+                desiredNode = ResolvePreferredModelSceneNode();
+            }
+
+            if (desiredNode == null || _project.SelectedNode?.Id == desiredNode.Id)
+            {
+                return false;
+            }
+
+            _project.SetSelectedNode(desiredNode);
+            if (desiredNode is LightNode lightNode)
+            {
+                int index = _project.Lights.FindIndex(light => ReferenceEquals(light, lightNode.Light));
+                if (index >= 0)
+                {
+                    _project.SetSelectedLightIndex(index);
+                }
+            }
+
+            return true;
+        }
+
+        private SceneNode? ResolveSelectedLightSceneNode()
+        {
+            int selectedIndex = _project.SelectedLightIndex;
+            if (selectedIndex < 0 || selectedIndex >= _project.Lights.Count)
+            {
+                return null;
+            }
+
+            KnobLight selectedLight = _project.Lights[selectedIndex];
+            return _project.SceneRoot.Children
+                .OfType<LightNode>()
+                .FirstOrDefault(node => ReferenceEquals(node.Light, selectedLight));
+        }
+
+        private SceneNode? ResolvePreferredModelSceneNode()
+        {
+            if (_project.SelectedNode is ModelNode ||
+                _project.SelectedNode is MaterialNode ||
+                _project.SelectedNode is CollarNode)
+            {
+                return _project.SelectedNode;
+            }
+
+            return GetModelNode();
+        }
+
         private void SyncSceneListSelectionToProjectNode()
         {
             if (_sceneListBox == null)
@@ -595,8 +667,7 @@ namespace KnobForge.App.Views
                 }
             }
 
-            SelectInspectorTabForSceneNode(node);
-            RefreshInspectorFromProject();
+            RefreshInspectorFromProject(InspectorRefreshTabPolicy.FollowSceneSelection);
             if (selectedLightChanged)
             {
                 _metalViewport?.InvalidateGpu();
@@ -677,6 +748,9 @@ namespace KnobForge.App.Views
             public float ShadowQuality { get; set; }
             public float ShadowGray { get; set; }
             public float ShadowDiffuseInfluence { get; set; }
+            public int PaintHistoryRevision { get; set; }
+            public int ActivePaintLayerIndex { get; set; }
+            public int FocusedPaintLayerIndex { get; set; } = -1;
             public bool BrushPaintingEnabled { get; set; }
             public PaintBrushType BrushType { get; set; }
             public PaintChannel BrushChannel { get; set; }

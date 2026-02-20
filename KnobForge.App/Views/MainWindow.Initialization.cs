@@ -179,6 +179,21 @@ namespace KnobForge.App.Views
             _removeLightButton.Click += (_, _) => RemoveSelectedLight();
             _centerLightButton.Click += (_, _) => CenterLight();
             _saveReferenceProfileButton.Click += OnSaveReferenceProfileClicked;
+            if (_openProjectButton != null)
+            {
+                _openProjectButton.Click += OnOpenProjectButtonClicked;
+            }
+
+            if (_saveProjectButton != null)
+            {
+                _saveProjectButton.Click += OnSaveProjectButtonClicked;
+            }
+
+            if (_saveProjectAsButton != null)
+            {
+                _saveProjectAsButton.Click += OnSaveProjectAsButtonClicked;
+            }
+
             if (_overwriteReferenceProfileButton != null)
             {
                 _overwriteReferenceProfileButton.Click += OnOverwriteReferenceProfileClicked;
@@ -355,7 +370,7 @@ namespace KnobForge.App.Views
                 Dispatcher.UIThread.Post(() =>
                 {
                     RefreshSceneTree();
-                    RefreshInspectorFromProject();
+                    RefreshInspectorFromProject(InspectorRefreshTabPolicy.FollowSceneSelection);
                 }, DispatcherPriority.Loaded);
             };
         }

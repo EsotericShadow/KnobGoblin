@@ -28,6 +28,7 @@ namespace KnobForge.App.Views
                 _metalViewport.PaintHudUpdated += OnViewportPaintHudUpdated;
             }
 
+            InitializePaintLayerUx();
             UpdateBrushContextUi();
             _metalViewport?.RefreshPaintHud();
         }

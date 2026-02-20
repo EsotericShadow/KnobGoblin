@@ -104,9 +104,13 @@ namespace KnobForge.App.Views
         private void OnClearPaintMask()
         {
             _project.ClearPaintMask();
-            _metalViewport?.DiscardPendingPaintStamps();
-            _metalViewport?.RequestClearPaintColorTexture();
-            _metalViewport?.InvalidateGpu();
+            if (_metalViewport != null)
+            {
+                _metalViewport.DiscardPendingPaintStamps();
+                _metalViewport.RequestClearPaintColorTexture();
+                _metalViewport.ClearPaintToRevisionZero();
+                _metalViewport.InvalidateGpu();
+            }
             NotifyRenderOnly();
         }
 

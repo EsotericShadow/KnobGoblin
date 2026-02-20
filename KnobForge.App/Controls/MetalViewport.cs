@@ -5,6 +5,8 @@ using System.Linq;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -32,6 +34,11 @@ namespace KnobForge.App.Controls
 
     public sealed class MetalViewport : NativeControlHost
     {
+        private static readonly JsonSerializerOptions ProjectStateJsonOptions = new()
+        {
+            Converters = { new JsonStringEnumConverter() }
+        };
+
         public enum PaintHitMode
         {
             Idle,
@@ -124,6 +131,32 @@ namespace KnobForge.App.Controls
             public byte LineAlpha { get; }
         }
 
+        public readonly struct PaintLayerInfo
+        {
+            public PaintLayerInfo(int index, string name, bool isActive, bool isFocused)
+            {
+                Index = index;
+                Name = name ?? string.Empty;
+                IsActive = isActive;
+                IsFocused = isFocused;
+            }
+
+            public int Index { get; }
+            public string Name { get; }
+            public bool IsActive { get; }
+            public bool IsFocused { get; }
+        }
+
+        private sealed class PaintLayerState
+        {
+            public PaintLayerState(string name)
+            {
+                Name = string.IsNullOrWhiteSpace(name) ? "Layer" : name.Trim();
+            }
+
+            public string Name { get; set; }
+        }
+
         private const int MaxGpuLights = 8;
         private const nuint DepthPixelFormat = 252; // MTLPixelFormatDepth32Float
         private const nuint NormalMapPixelFormat = 70; // MTLPixelFormatRGBA8Unorm
@@ -205,6 +238,7 @@ namespace KnobForge.App.Controls
         private bool _isPainting;
         private Point _lastPointer;
         private Point _lastPaintPointer;
+        private int _activeStrokeLayerIndex;
         private Point _scratchVirtualPointer;
         private bool _scratchVirtualPointerInitialized;
         private float _scratchCurrentDepth;
@@ -215,9 +249,16 @@ namespace KnobForge.App.Controls
         private bool _paintPickMapDirty = true;
         private readonly byte[] _paintPickReadbackPixel = new byte[4];
         private readonly List<PaintStampCommand> _pendingPaintStampCommands = new();
+        private readonly List<PaintStampCommand> _activeStrokeCommands = new();
+        private readonly List<PaintStrokeRecord> _committedPaintStrokes = new();
+        private readonly List<PaintLayerState> _paintLayers = new();
         private readonly List<LightGizmoSnapshot> _lightGizmoSnapshots = new(16);
         private readonly List<ShadowPassConfig> _resolvedShadowPasses = new(MaxShadowPassLights);
         private readonly List<ShadowLightContribution> _shadowLightContributions = new(8);
+        private int _paintHistoryRevision;
+        private int _activePaintLayerIndex;
+        private int _focusedPaintLayerIndex = -1;
+        private bool _paintRebuildRequested = true;
         private OrientationDebug _orientation = new()
         {
             InvertX = true,
@@ -262,9 +303,20 @@ namespace KnobForge.App.Controls
                 _paintColorTextureNeedsClear = true;
                 _paintPickMapDirty = true;
                 _pendingPaintStampCommands.Clear();
+                _activeStrokeCommands.Clear();
+                _committedPaintStrokes.Clear();
+                _paintLayers.Clear();
+                _paintHistoryRevision = 0;
+                _activePaintLayerIndex = 0;
+                _focusedPaintLayerIndex = -1;
+                _activeStrokeLayerIndex = 0;
+                EnsureDefaultPaintLayer();
+                _paintRebuildRequested = true;
                 _viewportCollarStateLogged = false;
                 _offscreenCollarStateLogged = false;
                 InvalidateGpu();
+                RaisePaintLayersChanged();
+                RaisePaintHistoryRevisionChanged();
                 PublishPaintHudSnapshot();
             }
         }
@@ -277,18 +329,506 @@ namespace KnobForge.App.Controls
             _context is not null &&
             _metalLayer != IntPtr.Zero &&
             _project is not null;
+        public int PaintHistoryRevision => _paintHistoryRevision;
+        public int ActivePaintLayerIndex => _activePaintLayerIndex;
+        public int FocusedPaintLayerIndex => _focusedPaintLayerIndex;
         public event Action<PaintHudSnapshot>? PaintHudUpdated;
         public event Action? ViewportFrameRendered;
+        public event Action? PaintLayersChanged;
+        public event Action<int>? PaintHistoryRevisionChanged;
 
         public MetalViewport()
         {
             Focusable = true;
             IsHitTestVisible = true;
+            EnsureDefaultPaintLayer();
         }
 
         public void RefreshPaintHud()
         {
             PublishPaintHudSnapshot();
+        }
+
+        public IReadOnlyList<PaintLayerInfo> GetPaintLayers()
+        {
+            EnsureDefaultPaintLayer();
+            var result = new PaintLayerInfo[_paintLayers.Count];
+            for (int i = 0; i < _paintLayers.Count; i++)
+            {
+                PaintLayerState layer = _paintLayers[i];
+                result[i] = new PaintLayerInfo(
+                    i,
+                    layer.Name,
+                    i == _activePaintLayerIndex,
+                    i == _focusedPaintLayerIndex);
+            }
+
+            return result;
+        }
+
+        public bool AddPaintLayer(string? name = null)
+        {
+            EnsureDefaultPaintLayer();
+            string layerName = NormalizePaintLayerName(name);
+            if (string.IsNullOrWhiteSpace(layerName))
+            {
+                layerName = BuildNextPaintLayerName();
+            }
+
+            _paintLayers.Add(new PaintLayerState(layerName));
+            _activePaintLayerIndex = _paintLayers.Count - 1;
+            _paintRebuildRequested = true;
+            InvalidateGpu();
+            RaisePaintLayersChanged();
+            return true;
+        }
+
+        public bool RenamePaintLayer(int index, string? name)
+        {
+            EnsureDefaultPaintLayer();
+            if (index < 0 || index >= _paintLayers.Count)
+            {
+                return false;
+            }
+
+            string normalized = NormalizePaintLayerName(name);
+            if (string.IsNullOrWhiteSpace(normalized))
+            {
+                return false;
+            }
+
+            _paintLayers[index].Name = normalized;
+            RaisePaintLayersChanged();
+            return true;
+        }
+
+        public bool DeletePaintLayer(int index)
+        {
+            EnsureDefaultPaintLayer();
+            if (_paintLayers.Count <= 1 || index < 0 || index >= _paintLayers.Count)
+            {
+                return false;
+            }
+
+            _paintLayers.RemoveAt(index);
+            _activePaintLayerIndex = Math.Clamp(_activePaintLayerIndex, 0, _paintLayers.Count - 1);
+            if (_focusedPaintLayerIndex == index)
+            {
+                _focusedPaintLayerIndex = -1;
+            }
+            else if (_focusedPaintLayerIndex > index)
+            {
+                _focusedPaintLayerIndex--;
+            }
+
+            if (_activeStrokeLayerIndex == index)
+            {
+                _activeStrokeLayerIndex = _activePaintLayerIndex;
+            }
+            else if (_activeStrokeLayerIndex > index)
+            {
+                _activeStrokeLayerIndex--;
+            }
+
+            RemapQueuedPaintCommandsAfterLayerDelete(_pendingPaintStampCommands, index);
+            RemapQueuedPaintCommandsAfterLayerDelete(_activeStrokeCommands, index);
+
+            bool historyShifted = false;
+            for (int i = _committedPaintStrokes.Count - 1; i >= 0; i--)
+            {
+                PaintStrokeRecord stroke = _committedPaintStrokes[i];
+                if (stroke.LayerIndex == index)
+                {
+                    _committedPaintStrokes.RemoveAt(i);
+                    historyShifted = true;
+                    continue;
+                }
+
+                if (stroke.LayerIndex > index)
+                {
+                    PaintStampCommand[] shifted = new PaintStampCommand[stroke.Commands.Length];
+                    for (int c = 0; c < stroke.Commands.Length; c++)
+                    {
+                        PaintStampCommand command = stroke.Commands[c];
+                        shifted[c] = command with { LayerIndex = command.LayerIndex - 1 };
+                    }
+
+                    _committedPaintStrokes[i] = new PaintStrokeRecord(stroke.LayerIndex - 1, shifted);
+                    historyShifted = true;
+                }
+            }
+
+            if (historyShifted)
+            {
+                _paintHistoryRevision = Math.Clamp(_paintHistoryRevision, 0, _committedPaintStrokes.Count);
+                RaisePaintHistoryRevisionChanged();
+            }
+
+            _paintRebuildRequested = true;
+            InvalidateGpu();
+            RaisePaintLayersChanged();
+            return true;
+        }
+
+        public bool SetActivePaintLayer(int index)
+        {
+            EnsureDefaultPaintLayer();
+            int clamped = Math.Clamp(index, 0, _paintLayers.Count - 1);
+            if (_activePaintLayerIndex == clamped)
+            {
+                return false;
+            }
+
+            _activePaintLayerIndex = clamped;
+            RaisePaintLayersChanged();
+            return true;
+        }
+
+        public bool SetFocusedPaintLayer(int index)
+        {
+            EnsureDefaultPaintLayer();
+            int clamped = index < 0 ? -1 : Math.Clamp(index, 0, _paintLayers.Count - 1);
+            if (_focusedPaintLayerIndex == clamped)
+            {
+                return false;
+            }
+
+            _focusedPaintLayerIndex = clamped;
+            _paintRebuildRequested = true;
+            InvalidateGpu();
+            RaisePaintLayersChanged();
+            return true;
+        }
+
+        public bool ClearPaintToRevisionZero()
+        {
+            if (_paintHistoryRevision == 0 && _pendingPaintStampCommands.Count == 0 && _activeStrokeCommands.Count == 0)
+            {
+                return false;
+            }
+
+            _pendingPaintStampCommands.Clear();
+            _activeStrokeCommands.Clear();
+            _paintHistoryRevision = 0;
+            _paintRebuildRequested = true;
+            _paintColorTextureNeedsClear = true;
+            InvalidateGpu();
+            RaisePaintHistoryRevisionChanged();
+            return true;
+        }
+
+        public bool RestorePaintHistoryRevision(int revision)
+        {
+            int clamped = Math.Clamp(revision, 0, _committedPaintStrokes.Count);
+            if (_paintHistoryRevision == clamped)
+            {
+                return false;
+            }
+
+            _pendingPaintStampCommands.Clear();
+            _activeStrokeCommands.Clear();
+            _paintHistoryRevision = clamped;
+            _paintRebuildRequested = true;
+            _paintColorTextureNeedsClear = true;
+            InvalidateGpu();
+            RaisePaintHistoryRevisionChanged();
+            return true;
+        }
+
+        private void EnsureDefaultPaintLayer()
+        {
+            if (_paintLayers.Count > 0)
+            {
+                _activePaintLayerIndex = Math.Clamp(_activePaintLayerIndex, 0, _paintLayers.Count - 1);
+                if (_focusedPaintLayerIndex >= _paintLayers.Count)
+                {
+                    _focusedPaintLayerIndex = -1;
+                }
+
+                return;
+            }
+
+            _paintLayers.Add(new PaintLayerState("Layer 1"));
+            _activePaintLayerIndex = 0;
+            if (_focusedPaintLayerIndex >= 0)
+            {
+                _focusedPaintLayerIndex = 0;
+            }
+        }
+
+        private static string NormalizePaintLayerName(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
+        }
+
+        private string BuildNextPaintLayerName()
+        {
+            int ordinal = _paintLayers.Count + 1;
+            string candidate = $"Layer {ordinal}";
+            while (_paintLayers.Any(layer => string.Equals(layer.Name, candidate, StringComparison.OrdinalIgnoreCase)))
+            {
+                ordinal++;
+                candidate = $"Layer {ordinal}";
+            }
+
+            return candidate;
+        }
+
+        private static void RemapQueuedPaintCommandsAfterLayerDelete(List<PaintStampCommand> commands, int deletedLayerIndex)
+        {
+            for (int i = commands.Count - 1; i >= 0; i--)
+            {
+                PaintStampCommand command = commands[i];
+                if (command.LayerIndex == deletedLayerIndex)
+                {
+                    commands.RemoveAt(i);
+                    continue;
+                }
+
+                if (command.LayerIndex > deletedLayerIndex)
+                {
+                    commands[i] = command with { LayerIndex = command.LayerIndex - 1 };
+                }
+            }
+        }
+
+        private void RaisePaintLayersChanged()
+        {
+            PaintLayersChanged?.Invoke();
+        }
+
+        private void RaisePaintHistoryRevisionChanged()
+        {
+            PaintHistoryRevisionChanged?.Invoke(_paintHistoryRevision);
+        }
+
+        public string ExportPaintStateJson()
+        {
+            EnsureDefaultPaintLayer();
+
+            var layers = new List<PaintLayerPersisted>(_paintLayers.Count);
+            foreach (PaintLayerState layer in _paintLayers)
+            {
+                layers.Add(new PaintLayerPersisted
+                {
+                    Name = layer.Name
+                });
+            }
+
+            var strokes = new List<PaintStrokePersisted>(_committedPaintStrokes.Count);
+            foreach (PaintStrokeRecord stroke in _committedPaintStrokes)
+            {
+                var commands = new List<PaintStampPersisted>(stroke.Commands.Length);
+                for (int i = 0; i < stroke.Commands.Length; i++)
+                {
+                    PaintStampCommand command = stroke.Commands[i];
+                    commands.Add(new PaintStampPersisted
+                    {
+                        UvX = command.UvCenter.X,
+                        UvY = command.UvCenter.Y,
+                        UvRadius = command.UvRadius,
+                        Opacity = command.Opacity,
+                        Spread = command.Spread,
+                        Channel = command.Channel,
+                        BrushType = command.BrushType,
+                        ScratchAbrasionType = command.ScratchAbrasionType,
+                        PaintColorX = command.PaintColor.X,
+                        PaintColorY = command.PaintColor.Y,
+                        PaintColorZ = command.PaintColor.Z,
+                        Seed = command.Seed,
+                        LayerIndex = command.LayerIndex
+                    });
+                }
+
+                strokes.Add(new PaintStrokePersisted
+                {
+                    LayerIndex = stroke.LayerIndex,
+                    Commands = commands
+                });
+            }
+
+            var state = new PaintProjectState
+            {
+                Layers = layers,
+                ActiveLayerIndex = _activePaintLayerIndex,
+                FocusedLayerIndex = _focusedPaintLayerIndex,
+                PaintHistoryRevision = _paintHistoryRevision,
+                Strokes = strokes
+            };
+
+            return JsonSerializer.Serialize(state, ProjectStateJsonOptions);
+        }
+
+        public bool TryImportPaintStateJson(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return false;
+            }
+
+            PaintProjectState? state;
+            try
+            {
+                state = JsonSerializer.Deserialize<PaintProjectState>(json, ProjectStateJsonOptions);
+            }
+            catch
+            {
+                return false;
+            }
+
+            if (state == null)
+            {
+                return false;
+            }
+
+            _pendingPaintStampCommands.Clear();
+            _activeStrokeCommands.Clear();
+            _committedPaintStrokes.Clear();
+            _paintLayers.Clear();
+
+            if (state.Layers != null)
+            {
+                for (int i = 0; i < state.Layers.Count; i++)
+                {
+                    string name = NormalizePaintLayerName(state.Layers[i].Name);
+                    _paintLayers.Add(new PaintLayerState(string.IsNullOrWhiteSpace(name) ? $"Layer {i + 1}" : name));
+                }
+            }
+
+            EnsureDefaultPaintLayer();
+            int layerCount = _paintLayers.Count;
+
+            if (state.Strokes != null)
+            {
+                for (int i = 0; i < state.Strokes.Count; i++)
+                {
+                    PaintStrokePersisted stroke = state.Strokes[i];
+                    if (stroke.Commands == null || stroke.Commands.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    PaintStampCommand[] commands = new PaintStampCommand[stroke.Commands.Count];
+                    for (int c = 0; c < stroke.Commands.Count; c++)
+                    {
+                        PaintStampPersisted persisted = stroke.Commands[c];
+                        int commandLayer = Math.Clamp(persisted.LayerIndex, 0, Math.Max(0, layerCount - 1));
+                        commands[c] = new PaintStampCommand(
+                            UvCenter: new Vector2(persisted.UvX, persisted.UvY),
+                            UvRadius: MathF.Max(1e-6f, persisted.UvRadius),
+                            Opacity: Math.Clamp(persisted.Opacity, 0f, 1f),
+                            Spread: Math.Clamp(persisted.Spread, 0f, 1f),
+                            Channel: persisted.Channel,
+                            BrushType: persisted.BrushType,
+                            ScratchAbrasionType: persisted.ScratchAbrasionType,
+                            PaintColor: new Vector3(
+                                Math.Clamp(persisted.PaintColorX, 0f, 1f),
+                                Math.Clamp(persisted.PaintColorY, 0f, 1f),
+                                Math.Clamp(persisted.PaintColorZ, 0f, 1f)),
+                            Seed: persisted.Seed,
+                            LayerIndex: commandLayer);
+                    }
+
+                    int strokeLayer = Math.Clamp(stroke.LayerIndex, 0, Math.Max(0, layerCount - 1));
+                    _committedPaintStrokes.Add(new PaintStrokeRecord(strokeLayer, commands));
+                }
+            }
+
+            _activePaintLayerIndex = Math.Clamp(state.ActiveLayerIndex, 0, Math.Max(0, _paintLayers.Count - 1));
+            _focusedPaintLayerIndex = state.FocusedLayerIndex < 0
+                ? -1
+                : Math.Clamp(state.FocusedLayerIndex, 0, Math.Max(0, _paintLayers.Count - 1));
+            _paintHistoryRevision = Math.Clamp(state.PaintHistoryRevision, 0, _committedPaintStrokes.Count);
+            _activeStrokeLayerIndex = _activePaintLayerIndex;
+            _paintRebuildRequested = true;
+            _paintColorTextureNeedsClear = true;
+
+            RaisePaintLayersChanged();
+            RaisePaintHistoryRevisionChanged();
+            PublishPaintHudSnapshot();
+            InvalidateGpu();
+            return true;
+        }
+
+        public string ExportViewportStateJson()
+        {
+            var state = new ViewportProjectState
+            {
+                OrbitYawDeg = _orbitYawDeg,
+                OrbitPitchDeg = _orbitPitchDeg,
+                Zoom = _zoom,
+                PanX = _panPx.X,
+                PanY = _panPx.Y,
+                Orientation = new OrientationProjectState
+                {
+                    InvertX = _orientation.InvertX,
+                    InvertY = _orientation.InvertY,
+                    InvertZ = _orientation.InvertZ,
+                    FlipCamera180 = _orientation.FlipCamera180
+                },
+                GizmoInvertX = _gizmoInvertX,
+                GizmoInvertY = _gizmoInvertY,
+                GizmoInvertZ = _gizmoInvertZ,
+                BrushInvertX = _brushInvertX,
+                BrushInvertY = _brushInvertY,
+                BrushInvertZ = _brushInvertZ,
+                InvertImportedCollarOrbit = _invertImportedCollarOrbit,
+                InvertKnobFrontFaceWinding = _invertKnobFrontFaceWinding,
+                InvertImportedStlFrontFaceWinding = _invertImportedStlFrontFaceWinding
+            };
+
+            return JsonSerializer.Serialize(state, ProjectStateJsonOptions);
+        }
+
+        public bool TryImportViewportStateJson(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return false;
+            }
+
+            ViewportProjectState? state;
+            try
+            {
+                state = JsonSerializer.Deserialize<ViewportProjectState>(json, ProjectStateJsonOptions);
+            }
+            catch
+            {
+                return false;
+            }
+
+            if (state == null)
+            {
+                return false;
+            }
+
+            _orbitYawDeg = state.OrbitYawDeg;
+            _orbitPitchDeg = Math.Clamp(state.OrbitPitchDeg, -89f, 89f);
+            _zoom = Math.Clamp(state.Zoom, 0.2f, 8f);
+            _panPx = new Vector2(state.PanX, state.PanY);
+
+            if (state.Orientation != null)
+            {
+                _orientation = new OrientationDebug
+                {
+                    InvertX = state.Orientation.InvertX,
+                    InvertY = state.Orientation.InvertY,
+                    InvertZ = state.Orientation.InvertZ,
+                    FlipCamera180 = state.Orientation.FlipCamera180
+                };
+            }
+
+            _gizmoInvertX = state.GizmoInvertX;
+            _gizmoInvertY = state.GizmoInvertY;
+            _gizmoInvertZ = state.GizmoInvertZ;
+            _brushInvertX = state.BrushInvertX;
+            _brushInvertY = state.BrushInvertY;
+            _brushInvertZ = state.BrushInvertZ;
+            _invertImportedCollarOrbit = state.InvertImportedCollarOrbit;
+            _invertKnobFrontFaceWinding = state.InvertKnobFrontFaceWinding;
+            _invertImportedStlFrontFaceWinding = state.InvertImportedStlFrontFaceWinding;
+            InvalidateGpu();
+            return true;
         }
 
         public IReadOnlyList<LightGizmoSnapshot> GetLightGizmoSnapshots()
@@ -825,6 +1365,10 @@ namespace KnobForge.App.Controls
                 _paintColorTextureNeedsClear = true;
                 _paintPickMapDirty = true;
                 _pendingPaintStampCommands.Clear();
+                _activeStrokeCommands.Clear();
+                _committedPaintStrokes.Clear();
+                _paintHistoryRevision = 0;
+                _paintRebuildRequested = true;
 
                 ClearMeshResources();
                 _meshShapeKey = default;
@@ -2189,6 +2733,7 @@ namespace KnobForge.App.Controls
         public void DiscardPendingPaintStamps()
         {
             _pendingPaintStampCommands.Clear();
+            _activeStrokeCommands.Clear();
         }
 
         public void RequestClearPaintColorTexture()
@@ -2204,16 +2749,13 @@ namespace KnobForge.App.Controls
                 return;
             }
 
+            EnsureDefaultPaintLayer();
+
             if (_paintColorTexture != IntPtr.Zero && _paintColorTextureNeedsClear)
             {
                 ClearTextureToTransparent(commandBuffer, _paintColorTexture);
                 GenerateTextureMipmaps(commandBuffer, _paintColorTexture);
                 _paintColorTextureNeedsClear = false;
-            }
-
-            if (_pendingPaintStampCommands.Count == 0)
-            {
-                return;
             }
 
             if (!EnsurePaintStampResources())
@@ -2222,14 +2764,51 @@ namespace KnobForge.App.Controls
                 return;
             }
 
-            bool stampedMask = ApplyPendingPaintStampsToTexture(
-                commandBuffer,
-                _paintMaskTexture,
-                includeColorChannel: false);
-            bool stampedColor = _paintColorTexture != IntPtr.Zero && ApplyPendingPaintStampsToTexture(
-                commandBuffer,
-                _paintColorTexture,
-                includeColorChannel: true);
+            bool stampedMask = false;
+            bool stampedColor = false;
+
+            if (_paintRebuildRequested)
+            {
+                ClearTextureToTransparent(commandBuffer, _paintMaskTexture);
+                if (_paintColorTexture != IntPtr.Zero)
+                {
+                    ClearTextureToTransparent(commandBuffer, _paintColorTexture);
+                }
+
+                if (_paintHistoryRevision > 0 && _committedPaintStrokes.Count > 0)
+                {
+                    var replayCommands = BuildReplayPaintCommands(_paintHistoryRevision);
+                    if (replayCommands.Count > 0)
+                    {
+                        stampedMask |= ApplyPaintStampsToTexture(
+                            commandBuffer,
+                            _paintMaskTexture,
+                            includeColorChannel: false,
+                            replayCommands);
+                        stampedColor |= _paintColorTexture != IntPtr.Zero && ApplyPaintStampsToTexture(
+                            commandBuffer,
+                            _paintColorTexture,
+                            includeColorChannel: true,
+                            replayCommands);
+                    }
+                }
+
+                _paintRebuildRequested = false;
+            }
+
+            if (_pendingPaintStampCommands.Count > 0)
+            {
+                stampedMask |= ApplyPaintStampsToTexture(
+                    commandBuffer,
+                    _paintMaskTexture,
+                    includeColorChannel: false,
+                    _pendingPaintStampCommands);
+                stampedColor |= _paintColorTexture != IntPtr.Zero && ApplyPaintStampsToTexture(
+                    commandBuffer,
+                    _paintColorTexture,
+                    includeColorChannel: true,
+                    _pendingPaintStampCommands);
+            }
 
             if (stampedMask)
             {
@@ -2244,10 +2823,11 @@ namespace KnobForge.App.Controls
             _pendingPaintStampCommands.Clear();
         }
 
-        private bool ApplyPendingPaintStampsToTexture(
+        private bool ApplyPaintStampsToTexture(
             IntPtr commandBuffer,
             IntPtr targetTexture,
-            bool includeColorChannel)
+            bool includeColorChannel,
+            IReadOnlyList<PaintStampCommand> commands)
         {
             if (commandBuffer == IntPtr.Zero || targetTexture == IntPtr.Zero)
             {
@@ -2279,9 +2859,9 @@ namespace KnobForge.App.Controls
 
             bool stampedAny = false;
             IntPtr activePipeline = IntPtr.Zero;
-            for (int i = 0; i < _pendingPaintStampCommands.Count; i++)
+            for (int i = 0; i < commands.Count; i++)
             {
-                PaintStampCommand command = _pendingPaintStampCommands[i];
+                PaintStampCommand command = ResolvePaintCommandForDisplay(commands[i]);
                 bool isColorChannel = command.Channel == PaintChannel.Color;
                 if (includeColorChannel)
                 {
@@ -2320,6 +2900,49 @@ namespace KnobForge.App.Controls
 
             ObjC.Void_objc_msgSend(encoderPtr, Selectors.EndEncoding);
             return stampedAny;
+        }
+
+        private List<PaintStampCommand> BuildReplayPaintCommands(int revision)
+        {
+            int clampedRevision = Math.Clamp(revision, 0, _committedPaintStrokes.Count);
+            int estimatedCount = 0;
+            for (int i = 0; i < clampedRevision; i++)
+            {
+                estimatedCount += _committedPaintStrokes[i].Commands.Length;
+            }
+
+            var commands = new List<PaintStampCommand>(Math.Max(0, estimatedCount));
+            for (int i = 0; i < clampedRevision; i++)
+            {
+                PaintStrokeRecord stroke = _committedPaintStrokes[i];
+                if (stroke.Commands.Length == 0)
+                {
+                    continue;
+                }
+
+                commands.AddRange(stroke.Commands);
+            }
+
+            return commands;
+        }
+
+        private PaintStampCommand ResolvePaintCommandForDisplay(PaintStampCommand command)
+        {
+            if (_focusedPaintLayerIndex < 0 || command.LayerIndex == _focusedPaintLayerIndex)
+            {
+                return command;
+            }
+
+            const float dimFactor = 0.75f;
+            Vector3 dimmedColor = new(
+                command.PaintColor.X * dimFactor,
+                command.PaintColor.Y * dimFactor,
+                command.PaintColor.Z * dimFactor);
+            return command with
+            {
+                Opacity = Math.Clamp(command.Opacity * dimFactor, 0f, 1f),
+                PaintColor = dimmedColor
+            };
         }
 
         private static void GenerateTextureMipmaps(IntPtr commandBuffer, IntPtr texture)
@@ -4004,8 +4627,11 @@ namespace KnobForge.App.Controls
 
             if (point.Properties.IsLeftButtonPressed && !commandDown && _project?.BrushPaintingEnabled == true)
             {
+                EnsureDefaultPaintLayer();
                 _isPainting = true;
                 _lastPaintPointer = pos;
+                _activeStrokeLayerIndex = Math.Clamp(_activePaintLayerIndex, 0, Math.Max(0, _paintLayers.Count - 1));
+                _activeStrokeCommands.Clear();
                 _scratchVirtualPointer = pos;
                 _scratchVirtualPointerInitialized = true;
                 _scratchCurrentDepth = Math.Clamp(_project.ScratchDepth, 0f, 1f);
@@ -4117,14 +4743,21 @@ namespace KnobForge.App.Controls
 
         private void OnForwardedPointerReleased(PointerReleasedEventArgs e, InputElement overlay)
         {
+            bool wasPainting = _isPainting;
             _isOrbiting = false;
             _isPanning = false;
             _isPainting = false;
             _optionDepthRampActive = false;
             _scratchVirtualPointerInitialized = false;
+            _activeStrokeLayerIndex = _activePaintLayerIndex;
             if (e.Pointer.Captured == overlay)
             {
                 e.Pointer.Capture(null);
+            }
+
+            if (wasPainting)
+            {
+                CommitActivePaintStroke();
             }
 
             PublishPaintHudSnapshot();
@@ -4231,7 +4864,9 @@ namespace KnobForge.App.Controls
                 _pendingPaintStampCommands.RemoveRange(0, dropCount);
             }
 
-            _pendingPaintStampCommands.Add(new PaintStampCommand(
+            EnsureDefaultPaintLayer();
+            int targetLayer = Math.Clamp(_isPainting ? _activeStrokeLayerIndex : _activePaintLayerIndex, 0, _paintLayers.Count - 1);
+            var command = new PaintStampCommand(
                 UvCenter: uvCenter,
                 UvRadius: MathF.Max(1e-6f, uvRadius),
                 Opacity: Math.Clamp(opacity, 0f, 1f),
@@ -4243,7 +4878,33 @@ namespace KnobForge.App.Controls
                     Math.Clamp(paintColor.X, 0f, 1f),
                     Math.Clamp(paintColor.Y, 0f, 1f),
                     Math.Clamp(paintColor.Z, 0f, 1f)),
-                Seed: seed));
+                Seed: seed,
+                LayerIndex: targetLayer);
+            _pendingPaintStampCommands.Add(command);
+            if (_isPainting)
+            {
+                _activeStrokeCommands.Add(command);
+            }
+        }
+
+        private void CommitActivePaintStroke()
+        {
+            if (_activeStrokeCommands.Count == 0)
+            {
+                return;
+            }
+
+            if (_paintHistoryRevision < _committedPaintStrokes.Count)
+            {
+                _committedPaintStrokes.RemoveRange(_paintHistoryRevision, _committedPaintStrokes.Count - _paintHistoryRevision);
+            }
+
+            int layerIndex = Math.Clamp(_activeStrokeLayerIndex, 0, Math.Max(0, _paintLayers.Count - 1));
+            PaintStampCommand[] commands = _activeStrokeCommands.ToArray();
+            _committedPaintStrokes.Add(new PaintStrokeRecord(layerIndex, commands));
+            _paintHistoryRevision = _committedPaintStrokes.Count;
+            _activeStrokeCommands.Clear();
+            RaisePaintHistoryRevisionChanged();
         }
 
         private static float GetScratchSpacingRatio(ScratchAbrasionType abrasionType)
@@ -5841,7 +6502,76 @@ fragment float4 fragment_light_gizmo_overlay(
             PaintBrushType BrushType,
             ScratchAbrasionType ScratchAbrasionType,
             Vector3 PaintColor,
-            uint Seed);
+            uint Seed,
+            int LayerIndex);
+
+        private readonly record struct PaintStrokeRecord(
+            int LayerIndex,
+            PaintStampCommand[] Commands);
+
+        private sealed class PaintProjectState
+        {
+            public List<PaintLayerPersisted>? Layers { get; set; }
+            public int ActiveLayerIndex { get; set; }
+            public int FocusedLayerIndex { get; set; } = -1;
+            public int PaintHistoryRevision { get; set; }
+            public List<PaintStrokePersisted>? Strokes { get; set; }
+        }
+
+        private sealed class PaintLayerPersisted
+        {
+            public string? Name { get; set; }
+        }
+
+        private sealed class PaintStrokePersisted
+        {
+            public int LayerIndex { get; set; }
+            public List<PaintStampPersisted> Commands { get; set; } = new();
+        }
+
+        private sealed class PaintStampPersisted
+        {
+            public float UvX { get; set; }
+            public float UvY { get; set; }
+            public float UvRadius { get; set; }
+            public float Opacity { get; set; }
+            public float Spread { get; set; }
+            public PaintChannel Channel { get; set; }
+            public PaintBrushType BrushType { get; set; }
+            public ScratchAbrasionType ScratchAbrasionType { get; set; }
+            public float PaintColorX { get; set; }
+            public float PaintColorY { get; set; }
+            public float PaintColorZ { get; set; }
+            public uint Seed { get; set; }
+            public int LayerIndex { get; set; }
+        }
+
+        private sealed class ViewportProjectState
+        {
+            public float OrbitYawDeg { get; set; }
+            public float OrbitPitchDeg { get; set; }
+            public float Zoom { get; set; }
+            public float PanX { get; set; }
+            public float PanY { get; set; }
+            public OrientationProjectState? Orientation { get; set; }
+            public bool GizmoInvertX { get; set; }
+            public bool GizmoInvertY { get; set; }
+            public bool GizmoInvertZ { get; set; }
+            public bool BrushInvertX { get; set; }
+            public bool BrushInvertY { get; set; }
+            public bool BrushInvertZ { get; set; }
+            public bool InvertImportedCollarOrbit { get; set; }
+            public bool InvertKnobFrontFaceWinding { get; set; }
+            public bool InvertImportedStlFrontFaceWinding { get; set; }
+        }
+
+        private sealed class OrientationProjectState
+        {
+            public bool InvertX { get; set; }
+            public bool InvertY { get; set; }
+            public bool InvertZ { get; set; }
+            public bool FlipCamera180 { get; set; }
+        }
 
         [StructLayout(LayoutKind.Sequential)]
         private struct GpuLight
