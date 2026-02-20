@@ -147,11 +147,36 @@ public sealed class MetalRendererContext
 
     private sealed class MTLBufferHandle : IMTLBuffer
     {
-        public IntPtr Handle { get; }
+        private IntPtr _handle;
+
+        public IntPtr Handle => _handle;
 
         public MTLBufferHandle(IntPtr handle)
         {
-            Handle = handle;
+            _handle = handle;
+        }
+
+        ~MTLBufferHandle()
+        {
+            Dispose(disposing: false);
+        }
+
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool disposing)
+        {
+            IntPtr handle = _handle;
+            if (handle == IntPtr.Zero)
+            {
+                return;
+            }
+
+            _handle = IntPtr.Zero;
+            ObjC.Void_objc_msgSend(handle, Selectors.Release);
         }
     }
 
@@ -160,6 +185,7 @@ public sealed class MetalRendererContext
         public static readonly IntPtr NewCommandQueue = ObjC.sel_registerName("newCommandQueue");
         public static readonly IntPtr CommandBuffer = ObjC.sel_registerName("commandBuffer");
         public static readonly IntPtr NewBufferWithBytesLengthOptions = ObjC.sel_registerName("newBufferWithBytes:length:options:");
+        public static readonly IntPtr Release = ObjC.sel_registerName("release");
     }
 
     private static class MetalInterop
@@ -183,5 +209,8 @@ public sealed class MetalRendererContext
             IntPtr arg1,
             nuint arg2,
             nuint arg3);
+
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern void Void_objc_msgSend(IntPtr receiver, IntPtr selector);
     }
 }

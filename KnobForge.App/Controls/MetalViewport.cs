@@ -166,6 +166,10 @@ namespace KnobForge.App.Controls
         private IntPtr _lightGizmoVertexFunction;
         private IntPtr _lightGizmoFragmentFunction;
         private IntPtr _lightGizmoPipeline;
+        private IntPtr _gpuUniformUploadScratch;
+        private int _gpuUniformUploadScratchSize;
+        private IntPtr _paintStampUniformUploadScratch;
+        private int _paintStampUniformUploadScratchSize;
         private nuint _depthTextureWidth;
         private nuint _depthTextureHeight;
         private MetalRendererContext? _context;
@@ -229,8 +233,7 @@ namespace KnobForge.App.Controls
                 }
 
                 _project = value;
-                _meshResources = null;
-                _collarResources = null;
+                ClearMeshResources();
                 _meshShapeKey = default;
                 _collarShapeKey = default;
                 ReleaseSpiralNormalTexture();
@@ -239,6 +242,7 @@ namespace KnobForge.App.Controls
                 ReleasePaintColorTexture();
                 ReleasePaintStampResources();
                 ReleaseLightGizmoResources();
+                ReleaseUniformUploadScratchBuffers();
                 _paintMaskTextureVersion = -1;
                 _paintColorTextureNeedsClear = true;
                 _pendingPaintStampCommands.Clear();
@@ -794,12 +798,14 @@ namespace KnobForge.App.Controls
                 ReleasePaintColorTexture();
                 ReleasePaintStampResources();
                 ReleaseLightGizmoResources();
+                ReleaseUniformUploadScratchBuffers();
                 _paintMaskTextureVersion = -1;
                 _paintColorTextureNeedsClear = true;
                 _pendingPaintStampCommands.Clear();
 
-                _meshResources = null;
+                ClearMeshResources();
                 _meshShapeKey = default;
+                _collarShapeKey = default;
                 _context = null;
             }
 
@@ -1021,12 +1027,28 @@ namespace KnobForge.App.Controls
             ViewportFrameRendered?.Invoke();
         }
 
+        private void ClearMeshResources()
+        {
+            ReplaceMeshResources(ref _meshResources, null);
+            ReplaceMeshResources(ref _collarResources, null);
+        }
+
+        private static void ReplaceMeshResources(ref MetalMeshGpuResources? target, MetalMeshGpuResources? replacement)
+        {
+            if (ReferenceEquals(target, replacement))
+            {
+                return;
+            }
+
+            target?.Dispose();
+            target = replacement;
+        }
+
         private void RefreshMeshResources(KnobProject? project, ModelNode? modelNode)
         {
             if (_context is null || project is null || modelNode is null)
             {
-                _meshResources = null;
-                _collarResources = null;
+                ClearMeshResources();
                 _collarShapeKey = default;
                 return;
             }
@@ -1037,23 +1059,25 @@ namespace KnobForge.App.Controls
             bool collarShapeChanged = !nextCollarKey.Equals(_collarShapeKey);
             if (!collarEnabled)
             {
-                _collarResources = null;
+                ReplaceMeshResources(ref _collarResources, null);
                 _collarShapeKey = default;
             }
             else if (collarShapeChanged || _collarResources == null)
             {
                 _collarShapeKey = nextCollarKey;
+                MetalMeshGpuResources? nextCollarResources = null;
                 CollarMesh? collarMesh = CollarMeshBuilder.TryBuildFromProject(project);
                 if (collarMesh is null || collarMesh.Vertices.Length == 0 || collarMesh.Indices.Length == 0)
                 {
                     Console.WriteLine(
                         $"[MetalViewport] Collar mesh build failed. enabled={collarEnabled}, preset={collarNode?.Preset}, pathSegments={collarNode?.PathSegments ?? 0}, crossSegments={collarNode?.CrossSegments ?? 0}, importPath={collarNode?.ImportedMeshPath ?? "<none>"}");
-                    _collarResources = null;
                 }
                 else
                 {
-                    _collarResources = CreateGpuResources(collarMesh.Vertices, collarMesh.Indices, collarMesh.ReferenceRadius);
+                    nextCollarResources = CreateGpuResources(collarMesh.Vertices, collarMesh.Indices, collarMesh.ReferenceRadius);
                 }
+
+                ReplaceMeshResources(ref _collarResources, nextCollarResources);
             }
 
             MeshShapeKey nextKey = new(
@@ -1101,12 +1125,13 @@ namespace KnobForge.App.Controls
             MetalMesh? mesh = MetalMeshBuilder.TryBuildFromProject(project);
             if (mesh is null || mesh.Vertices.Length == 0 || mesh.Indices.Length == 0)
             {
-                _meshResources = null;
+                ReplaceMeshResources(ref _meshResources, null);
                 _meshShapeKey = default;
                 return;
             }
 
-            _meshResources = CreateGpuResources(mesh.Vertices, mesh.Indices, mesh.ReferenceRadius);
+            MetalMeshGpuResources? nextMeshResources = CreateGpuResources(mesh.Vertices, mesh.Indices, mesh.ReferenceRadius);
+            ReplaceMeshResources(ref _meshResources, nextMeshResources);
             if (_meshResources == null)
             {
                 _meshShapeKey = default;
@@ -1128,6 +1153,8 @@ namespace KnobForge.App.Controls
             IMTLBuffer indexBuffer = _context.CreateBuffer<uint>(indices);
             if (vertexBuffer.Handle == IntPtr.Zero || indexBuffer.Handle == IntPtr.Zero)
             {
+                vertexBuffer.Dispose();
+                indexBuffer.Dispose();
                 return null;
             }
 
@@ -1516,30 +1543,79 @@ namespace KnobForge.App.Controls
             }
         }
 
-        private static void UploadUniforms(IntPtr encoderPtr, in GpuUniforms uniforms)
+        private IntPtr EnsureUniformUploadScratchBuffer(int requiredSize, bool paintStamp)
         {
+            if (requiredSize <= 0)
+            {
+                return IntPtr.Zero;
+            }
+
+            ref IntPtr targetBuffer = ref (paintStamp
+                ? ref _paintStampUniformUploadScratch
+                : ref _gpuUniformUploadScratch);
+            ref int targetSize = ref (paintStamp
+                ? ref _paintStampUniformUploadScratchSize
+                : ref _gpuUniformUploadScratchSize);
+
+            if (targetBuffer != IntPtr.Zero && targetSize >= requiredSize)
+            {
+                return targetBuffer;
+            }
+
+            if (targetBuffer != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(targetBuffer);
+            }
+
+            targetBuffer = Marshal.AllocHGlobal(requiredSize);
+            targetSize = requiredSize;
+            return targetBuffer;
+        }
+
+        private void ReleaseUniformUploadScratchBuffers()
+        {
+            if (_gpuUniformUploadScratch != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(_gpuUniformUploadScratch);
+                _gpuUniformUploadScratch = IntPtr.Zero;
+                _gpuUniformUploadScratchSize = 0;
+            }
+
+            if (_paintStampUniformUploadScratch != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(_paintStampUniformUploadScratch);
+                _paintStampUniformUploadScratch = IntPtr.Zero;
+                _paintStampUniformUploadScratchSize = 0;
+            }
+        }
+
+        private void UploadUniforms(IntPtr encoderPtr, in GpuUniforms uniforms)
+        {
+            if (encoderPtr == IntPtr.Zero)
+            {
+                return;
+            }
+
             int uniformSize = Marshal.SizeOf<GpuUniforms>();
-            IntPtr uniformPtr = Marshal.AllocHGlobal(uniformSize);
-            try
+            IntPtr uniformPtr = EnsureUniformUploadScratchBuffer(uniformSize, paintStamp: false);
+            if (uniformPtr == IntPtr.Zero)
             {
-                Marshal.StructureToPtr(uniforms, uniformPtr, false);
-                ObjC.Void_objc_msgSend_IntPtr_UInt_UInt(
-                    encoderPtr,
-                    Selectors.SetVertexBytesLengthAtIndex,
-                    uniformPtr,
-                    (nuint)uniformSize,
-                    1);
-                ObjC.Void_objc_msgSend_IntPtr_UInt_UInt(
-                    encoderPtr,
-                    Selectors.SetFragmentBytesLengthAtIndex,
-                    uniformPtr,
-                    (nuint)uniformSize,
-                    1);
+                return;
             }
-            finally
-            {
-                Marshal.FreeHGlobal(uniformPtr);
-            }
+
+            Marshal.StructureToPtr(uniforms, uniformPtr, false);
+            ObjC.Void_objc_msgSend_IntPtr_UInt_UInt(
+                encoderPtr,
+                Selectors.SetVertexBytesLengthAtIndex,
+                uniformPtr,
+                (nuint)uniformSize,
+                1);
+            ObjC.Void_objc_msgSend_IntPtr_UInt_UInt(
+                encoderPtr,
+                Selectors.SetFragmentBytesLengthAtIndex,
+                uniformPtr,
+                (nuint)uniformSize,
+                1);
         }
 
         private static readonly Vector2[] ShadowSampleKernel =
@@ -1562,7 +1638,7 @@ namespace KnobForge.App.Controls
             new(0.165f, -0.468f)
         };
 
-        private static void RenderShadowPasses(
+        private void RenderShadowPasses(
             IntPtr encoderPtr,
             in GpuUniforms baseUniforms,
             in ShadowPassConfig config,
@@ -2847,24 +2923,27 @@ namespace KnobForge.App.Controls
             };
         }
 
-        private static void UploadPaintStampUniform(IntPtr encoderPtr, in PaintStampUniform uniform)
+        private void UploadPaintStampUniform(IntPtr encoderPtr, in PaintStampUniform uniform)
         {
+            if (encoderPtr == IntPtr.Zero)
+            {
+                return;
+            }
+
             int uniformSize = Marshal.SizeOf<PaintStampUniform>();
-            IntPtr uniformPtr = Marshal.AllocHGlobal(uniformSize);
-            try
+            IntPtr uniformPtr = EnsureUniformUploadScratchBuffer(uniformSize, paintStamp: true);
+            if (uniformPtr == IntPtr.Zero)
             {
-                Marshal.StructureToPtr(uniform, uniformPtr, false);
-                ObjC.Void_objc_msgSend_IntPtr_UInt_UInt(
-                    encoderPtr,
-                    Selectors.SetFragmentBytesLengthAtIndex,
-                    uniformPtr,
-                    (nuint)uniformSize,
-                    0);
+                return;
             }
-            finally
-            {
-                Marshal.FreeHGlobal(uniformPtr);
-            }
+
+            Marshal.StructureToPtr(uniform, uniformPtr, false);
+            ObjC.Void_objc_msgSend_IntPtr_UInt_UInt(
+                encoderPtr,
+                Selectors.SetFragmentBytesLengthAtIndex,
+                uniformPtr,
+                (nuint)uniformSize,
+                0);
         }
 
         private void ReleasePaintStampResources()
@@ -3581,8 +3660,9 @@ namespace KnobForge.App.Controls
                 return false;
             }
 
-            RefreshMeshResources(_project, modelNode);
-            if (_meshResources is null)
+            if (_meshResources is null ||
+                _meshResources.VertexBuffer.Handle == IntPtr.Zero ||
+                _meshResources.IndexBuffer.Handle == IntPtr.Zero)
             {
                 _lastPaintHitMode = PaintHitMode.Idle;
                 return false;
@@ -4940,8 +5020,10 @@ fragment float4 fragment_light_gizmo_overlay(
             float Weight,
             float Planar);
 
-        private sealed class MetalMeshGpuResources
+        private sealed class MetalMeshGpuResources : IDisposable
         {
+            private bool _disposed;
+
             public required IMTLBuffer VertexBuffer { get; init; }
             public required IMTLBuffer IndexBuffer { get; init; }
             public required int IndexCount { get; init; }
@@ -4951,6 +5033,18 @@ fragment float4 fragment_light_gizmo_overlay(
             public required uint[] Indices { get; init; }
             public required Vector3 BoundsMin { get; init; }
             public required Vector3 BoundsMax { get; init; }
+
+            public void Dispose()
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                _disposed = true;
+                VertexBuffer.Dispose();
+                IndexBuffer.Dispose();
+            }
         }
 
         private enum InteractionMode

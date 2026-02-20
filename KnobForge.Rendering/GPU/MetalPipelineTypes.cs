@@ -17,7 +17,7 @@ public interface IMTLRenderPipelineState
     IntPtr Handle { get; }
 }
 
-public interface IMTLBuffer
+public interface IMTLBuffer : IDisposable
 {
     IntPtr Handle { get; }
 }
