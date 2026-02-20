@@ -150,6 +150,8 @@ namespace KnobForge.Core.Export
     {
         private static readonly ExportOutputStrategyDefinition DefaultStrategy =
             ExportOutputStrategies.Get(ExportOutputStrategy.JuceFilmstripBestDefault);
+        private const float DefaultOrbitVariantYawOffsetDeg = 12f;
+        private const float DefaultOrbitVariantPitchOffsetDeg = 8f;
 
         public ExportOutputStrategy Strategy { get; set; } = DefaultStrategy.Strategy;
         public int FrameCount { get; set; } = DefaultStrategy.FrameCount;
@@ -161,5 +163,8 @@ namespace KnobForge.Core.Export
         public bool ExportIndividualFrames { get; set; } = DefaultStrategy.ExportIndividualFrames;
         public bool ExportSpritesheet { get; set; } = DefaultStrategy.ExportSpritesheet;
         public float CameraDistanceScale { get; set; } = DefaultStrategy.CameraDistanceScale;
+        public bool ExportOrbitVariants { get; set; }
+        public float OrbitVariantYawOffsetDeg { get; set; } = DefaultOrbitVariantYawOffsetDeg;
+        public float OrbitVariantPitchOffsetDeg { get; set; } = DefaultOrbitVariantPitchOffsetDeg;
     }
 }

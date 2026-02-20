@@ -707,6 +707,33 @@
                                                          Width="96"
                                                          HorizontalContentAlignment="Right"/>
                                             </StackPanel>
+
+                                            <TextBlock Text="Clear Coat Amount"/>
+                                            <Slider x:Name="ClearCoatAmountSlider" Minimum="0" Maximum="1"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock x:Name="ClearCoatAmountValueText" Width="88" VerticalAlignment="Center"/>
+                                                <TextBox x:Name="ClearCoatAmountInputTextBox"
+                                                         Width="96"
+                                                         HorizontalContentAlignment="Right"/>
+                                            </StackPanel>
+
+                                            <TextBlock Text="Clear Coat Roughness"/>
+                                            <Slider x:Name="ClearCoatRoughnessSlider" Minimum="0.04" Maximum="1"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock x:Name="ClearCoatRoughnessValueText" Width="88" VerticalAlignment="Center"/>
+                                                <TextBox x:Name="ClearCoatRoughnessInputTextBox"
+                                                         Width="96"
+                                                         HorizontalContentAlignment="Right"/>
+                                            </StackPanel>
+
+                                            <TextBlock Text="Anisotropy Angle (deg)"/>
+                                            <Slider x:Name="AnisotropyAngleSlider" Minimum="-180" Maximum="180"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock x:Name="AnisotropyAngleValueText" Width="88" VerticalAlignment="Center"/>
+                                                <TextBox x:Name="AnisotropyAngleInputTextBox"
+                                                         Width="96"
+                                                         HorizontalContentAlignment="Right"/>
+                                            </StackPanel>
                                         </StackPanel>
 
                                         <StackPanel x:Name="ScratchPrimaryPanel" Spacing="6" IsVisible="False">
@@ -775,6 +802,24 @@
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock x:Name="ScratchExposeColorBValueText" Width="88" VerticalAlignment="Center"/>
                                                 <TextBox x:Name="ScratchExposeColorBInputTextBox"
+                                                         Width="96"
+                                                         HorizontalContentAlignment="Right"/>
+                                            </StackPanel>
+
+                                            <TextBlock Text="Scratch Exposed Metallic"/>
+                                            <Slider x:Name="ScratchExposeMetallicSlider" Minimum="0" Maximum="1"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock x:Name="ScratchExposeMetallicValueText" Width="88" VerticalAlignment="Center"/>
+                                                <TextBox x:Name="ScratchExposeMetallicInputTextBox"
+                                                         Width="96"
+                                                         HorizontalContentAlignment="Right"/>
+                                            </StackPanel>
+
+                                            <TextBlock Text="Scratch Exposed Roughness"/>
+                                            <Slider x:Name="ScratchExposeRoughnessSlider" Minimum="0.04" Maximum="1"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock x:Name="ScratchExposeRoughnessValueText" Width="88" VerticalAlignment="Center"/>
+                                                <TextBox x:Name="ScratchExposeRoughnessInputTextBox"
                                                          Width="96"
                                                          HorizontalContentAlignment="Right"/>
                                             </StackPanel>

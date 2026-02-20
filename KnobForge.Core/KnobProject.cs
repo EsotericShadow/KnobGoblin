@@ -102,8 +102,13 @@ namespace KnobForge.Core
         private float _brushDarkness = 0.58f;
         private float _paintCoatMetallic = 0.02f;
         private float _paintCoatRoughness = 0.56f;
+        private float _clearCoatAmount = 0f;
+        private float _clearCoatRoughness = 0.18f;
+        private float _anisotropyAngleDegrees = 0f;
         private Vector3 _paintColor = new(0.85f, 0.24f, 0.24f);
         private Vector3 _scratchExposeColor = new(0.88f, 0.88f, 0.90f);
+        private float _scratchExposeMetallic = 0.92f;
+        private float _scratchExposeRoughness = 0.20f;
         private float _scratchWidthPx = 20f;
         private float _scratchDepth = 0.45f;
         private float _scratchDragResistance = 0.38f;
@@ -208,6 +213,21 @@ namespace KnobForge.Core
             get => _paintCoatRoughness;
             set => _paintCoatRoughness = Math.Clamp(value, 0.04f, 1f);
         }
+        public float ClearCoatAmount
+        {
+            get => _clearCoatAmount;
+            set => _clearCoatAmount = Math.Clamp(value, 0f, 1f);
+        }
+        public float ClearCoatRoughness
+        {
+            get => _clearCoatRoughness;
+            set => _clearCoatRoughness = Math.Clamp(value, 0.04f, 1f);
+        }
+        public float AnisotropyAngleDegrees
+        {
+            get => _anisotropyAngleDegrees;
+            set => _anisotropyAngleDegrees = Math.Clamp(value, -180f, 180f);
+        }
         public Vector3 PaintColor
         {
             get => _paintColor;
@@ -223,6 +243,16 @@ namespace KnobForge.Core
                 Math.Clamp(value.X, 0f, 1f),
                 Math.Clamp(value.Y, 0f, 1f),
                 Math.Clamp(value.Z, 0f, 1f));
+        }
+        public float ScratchExposeMetallic
+        {
+            get => _scratchExposeMetallic;
+            set => _scratchExposeMetallic = Math.Clamp(value, 0f, 1f);
+        }
+        public float ScratchExposeRoughness
+        {
+            get => _scratchExposeRoughness;
+            set => _scratchExposeRoughness = Math.Clamp(value, 0.04f, 1f);
         }
         public float ScratchWidthPx
         {

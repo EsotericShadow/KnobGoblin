@@ -566,6 +566,21 @@ namespace KnobForge.App.Views
                 _paintCoatRoughnessValueText.Text = $"{_paintCoatRoughnessSlider.Value:0.00}";
             }
 
+            if (_clearCoatAmountSlider != null && _clearCoatAmountValueText != null)
+            {
+                _clearCoatAmountValueText.Text = $"{_clearCoatAmountSlider.Value:0.00}";
+            }
+
+            if (_clearCoatRoughnessSlider != null && _clearCoatRoughnessValueText != null)
+            {
+                _clearCoatRoughnessValueText.Text = $"{_clearCoatRoughnessSlider.Value:0.00}";
+            }
+
+            if (_anisotropyAngleSlider != null && _anisotropyAngleValueText != null)
+            {
+                _anisotropyAngleValueText.Text = $"{_anisotropyAngleSlider.Value:0.0}deg";
+            }
+
             if (_scratchWidthSlider != null && _scratchWidthValueText != null)
             {
                 _scratchWidthValueText.Text = $"{_scratchWidthSlider.Value:0.0}px";
@@ -599,6 +614,16 @@ namespace KnobForge.App.Views
             if (_scratchExposeColorBSlider != null && _scratchExposeColorBValueText != null)
             {
                 _scratchExposeColorBValueText.Text = $"{_scratchExposeColorBSlider.Value:0.00}";
+            }
+
+            if (_scratchExposeMetallicSlider != null && _scratchExposeMetallicValueText != null)
+            {
+                _scratchExposeMetallicValueText.Text = $"{_scratchExposeMetallicSlider.Value:0.00}";
+            }
+
+            if (_scratchExposeRoughnessSlider != null && _scratchExposeRoughnessValueText != null)
+            {
+                _scratchExposeRoughnessValueText.Text = $"{_scratchExposeRoughnessSlider.Value:0.00}";
             }
 
             UpdatePrecisionControlEntryText();

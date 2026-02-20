@@ -24,13 +24,18 @@ namespace KnobForge.App.Views
                 _brushSpreadSlider == null ||
                 _paintCoatMetallicSlider == null ||
                 _paintCoatRoughnessSlider == null ||
+                _clearCoatAmountSlider == null ||
+                _clearCoatRoughnessSlider == null ||
+                _anisotropyAngleSlider == null ||
                 _scratchWidthSlider == null ||
                 _scratchDepthSlider == null ||
                 _scratchResistanceSlider == null ||
                 _scratchDepthRampSlider == null ||
                 _scratchExposeColorRSlider == null ||
                 _scratchExposeColorGSlider == null ||
-                _scratchExposeColorBSlider == null)
+                _scratchExposeColorBSlider == null ||
+                _scratchExposeMetallicSlider == null ||
+                _scratchExposeRoughnessSlider == null)
             {
                 return;
             }
@@ -77,6 +82,9 @@ namespace KnobForge.App.Views
             _project.BrushSpread = (float)_brushSpreadSlider.Value;
             _project.PaintCoatMetallic = (float)_paintCoatMetallicSlider.Value;
             _project.PaintCoatRoughness = (float)_paintCoatRoughnessSlider.Value;
+            _project.ClearCoatAmount = (float)_clearCoatAmountSlider.Value;
+            _project.ClearCoatRoughness = (float)_clearCoatRoughnessSlider.Value;
+            _project.AnisotropyAngleDegrees = (float)_anisotropyAngleSlider.Value;
             _project.PaintColor = ToVector3(_brushPaintColorPicker.Color);
             _project.ScratchWidthPx = (float)_scratchWidthSlider.Value;
             _project.ScratchDepth = (float)_scratchDepthSlider.Value;
@@ -86,6 +94,8 @@ namespace KnobForge.App.Views
                 (float)_scratchExposeColorRSlider.Value,
                 (float)_scratchExposeColorGSlider.Value,
                 (float)_scratchExposeColorBSlider.Value);
+            _project.ScratchExposeMetallic = (float)_scratchExposeMetallicSlider.Value;
+            _project.ScratchExposeRoughness = (float)_scratchExposeRoughnessSlider.Value;
             UpdateBrushContextUi();
             NotifyRenderOnly();
             _metalViewport?.RefreshPaintHud();

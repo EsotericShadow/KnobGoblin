@@ -211,12 +211,18 @@ namespace KnobForge.App.Views
         private readonly Slider? _brushSpreadSlider;
         private readonly Slider? _paintCoatMetallicSlider;
         private readonly Slider? _paintCoatRoughnessSlider;
+        private readonly Slider? _clearCoatAmountSlider;
+        private readonly Slider? _clearCoatRoughnessSlider;
+        private readonly Slider? _anisotropyAngleSlider;
         private readonly TextBox? _brushSizeInputTextBox;
         private readonly TextBox? _brushOpacityInputTextBox;
         private readonly TextBox? _brushDarknessInputTextBox;
         private readonly TextBox? _brushSpreadInputTextBox;
         private readonly TextBox? _paintCoatMetallicInputTextBox;
         private readonly TextBox? _paintCoatRoughnessInputTextBox;
+        private readonly TextBox? _clearCoatAmountInputTextBox;
+        private readonly TextBox? _clearCoatRoughnessInputTextBox;
+        private readonly TextBox? _anisotropyAngleInputTextBox;
         private readonly Slider? _scratchWidthSlider;
         private readonly Slider? _scratchDepthSlider;
         private readonly Slider? _scratchResistanceSlider;
@@ -224,6 +230,8 @@ namespace KnobForge.App.Views
         private readonly Slider? _scratchExposeColorRSlider;
         private readonly Slider? _scratchExposeColorGSlider;
         private readonly Slider? _scratchExposeColorBSlider;
+        private readonly Slider? _scratchExposeMetallicSlider;
+        private readonly Slider? _scratchExposeRoughnessSlider;
         private readonly TextBox? _scratchWidthInputTextBox;
         private readonly TextBox? _scratchDepthInputTextBox;
         private readonly TextBox? _scratchResistanceInputTextBox;
@@ -231,6 +239,8 @@ namespace KnobForge.App.Views
         private readonly TextBox? _scratchExposeColorRInputTextBox;
         private readonly TextBox? _scratchExposeColorGInputTextBox;
         private readonly TextBox? _scratchExposeColorBInputTextBox;
+        private readonly TextBox? _scratchExposeMetallicInputTextBox;
+        private readonly TextBox? _scratchExposeRoughnessInputTextBox;
         private readonly Button? _clearPaintMaskButton;
         private readonly Button? _renderButton;
         private readonly TextBlock? _rotationValueText;
@@ -329,6 +339,9 @@ namespace KnobForge.App.Views
         private readonly TextBlock? _brushSpreadValueText;
         private readonly TextBlock? _paintCoatMetallicValueText;
         private readonly TextBlock? _paintCoatRoughnessValueText;
+        private readonly TextBlock? _clearCoatAmountValueText;
+        private readonly TextBlock? _clearCoatRoughnessValueText;
+        private readonly TextBlock? _anisotropyAngleValueText;
         private readonly TextBlock? _scratchWidthValueText;
         private readonly TextBlock? _scratchDepthValueText;
         private readonly TextBlock? _scratchResistanceValueText;
@@ -336,6 +349,8 @@ namespace KnobForge.App.Views
         private readonly TextBlock? _scratchExposeColorRValueText;
         private readonly TextBlock? _scratchExposeColorGValueText;
         private readonly TextBlock? _scratchExposeColorBValueText;
+        private readonly TextBlock? _scratchExposeMetallicValueText;
+        private readonly TextBlock? _scratchExposeRoughnessValueText;
             private readonly Button? _centerLightButton;
             private readonly ObservableCollection<SceneNode> _sceneNodes;
             private readonly List<UserReferenceProfile> _userReferenceProfiles = new();
@@ -563,12 +578,18 @@ namespace KnobForge.App.Views
             _brushSpreadSlider = this.FindControl<Slider>("BrushSpreadSlider");
             _paintCoatMetallicSlider = this.FindControl<Slider>("PaintCoatMetallicSlider");
             _paintCoatRoughnessSlider = this.FindControl<Slider>("PaintCoatRoughnessSlider");
+            _clearCoatAmountSlider = this.FindControl<Slider>("ClearCoatAmountSlider");
+            _clearCoatRoughnessSlider = this.FindControl<Slider>("ClearCoatRoughnessSlider");
+            _anisotropyAngleSlider = this.FindControl<Slider>("AnisotropyAngleSlider");
             _brushSizeInputTextBox = this.FindControl<TextBox>("BrushSizeInputTextBox");
             _brushOpacityInputTextBox = this.FindControl<TextBox>("BrushOpacityInputTextBox");
             _brushDarknessInputTextBox = this.FindControl<TextBox>("BrushDarknessInputTextBox");
             _brushSpreadInputTextBox = this.FindControl<TextBox>("BrushSpreadInputTextBox");
             _paintCoatMetallicInputTextBox = this.FindControl<TextBox>("PaintCoatMetallicInputTextBox");
             _paintCoatRoughnessInputTextBox = this.FindControl<TextBox>("PaintCoatRoughnessInputTextBox");
+            _clearCoatAmountInputTextBox = this.FindControl<TextBox>("ClearCoatAmountInputTextBox");
+            _clearCoatRoughnessInputTextBox = this.FindControl<TextBox>("ClearCoatRoughnessInputTextBox");
+            _anisotropyAngleInputTextBox = this.FindControl<TextBox>("AnisotropyAngleInputTextBox");
             _scratchWidthSlider = this.FindControl<Slider>("ScratchWidthSlider");
             _scratchDepthSlider = this.FindControl<Slider>("ScratchDepthSlider");
             _scratchResistanceSlider = this.FindControl<Slider>("ScratchResistanceSlider");
@@ -576,6 +597,8 @@ namespace KnobForge.App.Views
             _scratchExposeColorRSlider = this.FindControl<Slider>("ScratchExposeColorRSlider");
             _scratchExposeColorGSlider = this.FindControl<Slider>("ScratchExposeColorGSlider");
             _scratchExposeColorBSlider = this.FindControl<Slider>("ScratchExposeColorBSlider");
+            _scratchExposeMetallicSlider = this.FindControl<Slider>("ScratchExposeMetallicSlider");
+            _scratchExposeRoughnessSlider = this.FindControl<Slider>("ScratchExposeRoughnessSlider");
             _scratchWidthInputTextBox = this.FindControl<TextBox>("ScratchWidthInputTextBox");
             _scratchDepthInputTextBox = this.FindControl<TextBox>("ScratchDepthInputTextBox");
             _scratchResistanceInputTextBox = this.FindControl<TextBox>("ScratchResistanceInputTextBox");
@@ -583,6 +606,8 @@ namespace KnobForge.App.Views
             _scratchExposeColorRInputTextBox = this.FindControl<TextBox>("ScratchExposeColorRInputTextBox");
             _scratchExposeColorGInputTextBox = this.FindControl<TextBox>("ScratchExposeColorGInputTextBox");
             _scratchExposeColorBInputTextBox = this.FindControl<TextBox>("ScratchExposeColorBInputTextBox");
+            _scratchExposeMetallicInputTextBox = this.FindControl<TextBox>("ScratchExposeMetallicInputTextBox");
+            _scratchExposeRoughnessInputTextBox = this.FindControl<TextBox>("ScratchExposeRoughnessInputTextBox");
             _clearPaintMaskButton = this.FindControl<Button>("ClearPaintMaskButton");
             _renderButton = this.FindControl<Button>("RenderButton");
 
@@ -682,6 +707,9 @@ namespace KnobForge.App.Views
             _brushSpreadValueText = this.FindControl<TextBlock>("BrushSpreadValueText");
             _paintCoatMetallicValueText = this.FindControl<TextBlock>("PaintCoatMetallicValueText");
             _paintCoatRoughnessValueText = this.FindControl<TextBlock>("PaintCoatRoughnessValueText");
+            _clearCoatAmountValueText = this.FindControl<TextBlock>("ClearCoatAmountValueText");
+            _clearCoatRoughnessValueText = this.FindControl<TextBlock>("ClearCoatRoughnessValueText");
+            _anisotropyAngleValueText = this.FindControl<TextBlock>("AnisotropyAngleValueText");
             _scratchWidthValueText = this.FindControl<TextBlock>("ScratchWidthValueText");
             _scratchDepthValueText = this.FindControl<TextBlock>("ScratchDepthValueText");
             _scratchResistanceValueText = this.FindControl<TextBlock>("ScratchResistanceValueText");
@@ -689,6 +717,8 @@ namespace KnobForge.App.Views
             _scratchExposeColorRValueText = this.FindControl<TextBlock>("ScratchExposeColorRValueText");
             _scratchExposeColorGValueText = this.FindControl<TextBlock>("ScratchExposeColorGValueText");
             _scratchExposeColorBValueText = this.FindControl<TextBlock>("ScratchExposeColorBValueText");
+            _scratchExposeMetallicValueText = this.FindControl<TextBlock>("ScratchExposeMetallicValueText");
+            _scratchExposeRoughnessValueText = this.FindControl<TextBlock>("ScratchExposeRoughnessValueText");
             _centerLightButton = this.FindControl<Button>("CenterLightButton");
             if (!HasRequiredControls())
             {
@@ -1049,8 +1079,10 @@ namespace KnobForge.App.Views
                 _brushPaintEnabledCheckBox == null || _brushPaintChannelCombo == null || _brushTypeCombo == null || _brushPaintColorPicker == null || _scratchAbrasionTypeCombo == null ||
                 _brushSizeSlider == null || _brushOpacitySlider == null || _brushDarknessSlider == null || _brushSpreadSlider == null ||
                 _paintCoatMetallicSlider == null || _paintCoatRoughnessSlider == null ||
+                _clearCoatAmountSlider == null || _clearCoatRoughnessSlider == null || _anisotropyAngleSlider == null ||
                 _scratchWidthSlider == null || _scratchDepthSlider == null || _scratchResistanceSlider == null || _scratchDepthRampSlider == null ||
-                _scratchExposeColorRSlider == null || _scratchExposeColorGSlider == null || _scratchExposeColorBSlider == null)
+                _scratchExposeColorRSlider == null || _scratchExposeColorGSlider == null || _scratchExposeColorBSlider == null ||
+                _scratchExposeMetallicSlider == null || _scratchExposeRoughnessSlider == null)
             {
                 return;
             }
@@ -1225,6 +1257,9 @@ namespace KnobForge.App.Views
                 _brushSpreadSlider.IsEnabled = hasModel;
                 _paintCoatMetallicSlider.IsEnabled = hasModel;
                 _paintCoatRoughnessSlider.IsEnabled = hasModel;
+                _clearCoatAmountSlider.IsEnabled = hasModel;
+                _clearCoatRoughnessSlider.IsEnabled = hasModel;
+                _anisotropyAngleSlider.IsEnabled = hasModel;
                 _scratchWidthSlider.IsEnabled = hasModel;
                 _scratchDepthSlider.IsEnabled = hasModel;
                 _scratchResistanceSlider.IsEnabled = hasModel;
@@ -1232,6 +1267,8 @@ namespace KnobForge.App.Views
                 _scratchExposeColorRSlider.IsEnabled = hasModel;
                 _scratchExposeColorGSlider.IsEnabled = hasModel;
                 _scratchExposeColorBSlider.IsEnabled = hasModel;
+                _scratchExposeMetallicSlider.IsEnabled = hasModel;
+                _scratchExposeRoughnessSlider.IsEnabled = hasModel;
                 if (_brushSizeInputTextBox != null)
                 {
                     _brushSizeInputTextBox.IsEnabled = hasModel;
@@ -1260,6 +1297,21 @@ namespace KnobForge.App.Views
                 if (_paintCoatRoughnessInputTextBox != null)
                 {
                     _paintCoatRoughnessInputTextBox.IsEnabled = hasModel;
+                }
+
+                if (_clearCoatAmountInputTextBox != null)
+                {
+                    _clearCoatAmountInputTextBox.IsEnabled = hasModel;
+                }
+
+                if (_clearCoatRoughnessInputTextBox != null)
+                {
+                    _clearCoatRoughnessInputTextBox.IsEnabled = hasModel;
+                }
+
+                if (_anisotropyAngleInputTextBox != null)
+                {
+                    _anisotropyAngleInputTextBox.IsEnabled = hasModel;
                 }
 
                 if (_scratchWidthInputTextBox != null)
@@ -1295,6 +1347,16 @@ namespace KnobForge.App.Views
                 if (_scratchExposeColorBInputTextBox != null)
                 {
                     _scratchExposeColorBInputTextBox.IsEnabled = hasModel;
+                }
+
+                if (_scratchExposeMetallicInputTextBox != null)
+                {
+                    _scratchExposeMetallicInputTextBox.IsEnabled = hasModel;
+                }
+
+                if (_scratchExposeRoughnessInputTextBox != null)
+                {
+                    _scratchExposeRoughnessInputTextBox.IsEnabled = hasModel;
                 }
                 if (_clearPaintMaskButton != null)
                 {
@@ -1347,6 +1409,9 @@ namespace KnobForge.App.Views
                 _brushSpreadSlider.Value = project.BrushSpread;
                 _paintCoatMetallicSlider.Value = project.PaintCoatMetallic;
                 _paintCoatRoughnessSlider.Value = project.PaintCoatRoughness;
+                _clearCoatAmountSlider.Value = project.ClearCoatAmount;
+                _clearCoatRoughnessSlider.Value = project.ClearCoatRoughness;
+                _anisotropyAngleSlider.Value = project.AnisotropyAngleDegrees;
                 _scratchWidthSlider.Value = project.ScratchWidthPx;
                 _scratchDepthSlider.Value = project.ScratchDepth;
                 _scratchResistanceSlider.Value = project.ScratchDragResistance;
@@ -1354,6 +1419,8 @@ namespace KnobForge.App.Views
                 _scratchExposeColorRSlider.Value = project.ScratchExposeColor.X;
                 _scratchExposeColorGSlider.Value = project.ScratchExposeColor.Y;
                 _scratchExposeColorBSlider.Value = project.ScratchExposeColor.Z;
+                _scratchExposeMetallicSlider.Value = project.ScratchExposeMetallic;
+                _scratchExposeRoughnessSlider.Value = project.ScratchExposeRoughness;
                 UpdateBrushContextUi();
                 _metalViewport?.RefreshPaintHud();
 

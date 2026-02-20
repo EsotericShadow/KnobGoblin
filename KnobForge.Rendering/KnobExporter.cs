@@ -21,6 +21,7 @@ namespace KnobForge.Rendering
         public required string OutputDirectory { get; init; }
         public required string FirstFramePath { get; init; }
         public string? SpritesheetPath { get; init; }
+        public int ExportedViewCount { get; init; } = 1;
         public int RenderedFrames { get; init; }
         public int SpritesheetWidth { get; init; }
         public int SpritesheetHeight { get; init; }
@@ -119,11 +120,6 @@ namespace KnobForge.Rendering
             Directory.CreateDirectory(outputDirectory);
             ValidateOutputPathWritable(outputDirectory);
 
-            SpritesheetPlan? spritesheetPlan = null;
-            SKBitmap? spritesheetBitmap = null;
-            SKCanvas? spritesheetCanvas = null;
-            SKPaint? spritesheetPaint = null;
-
             var modelNodes = _project.SceneRoot.Children.OfType<ModelNode>().ToList();
             var originalRotations = modelNodes
                 .Select(model => (Model: model, Rotation: model.RotationRadians))
@@ -132,35 +128,21 @@ namespace KnobForge.Rendering
             try
             {
                 float referenceRadius = GetSceneReferenceRadius();
-                ViewportCameraState exportViewportCamera = BuildExportViewportCameraState(
+                ViewportCameraState baseExportViewportCamera = BuildExportViewportCameraState(
                     referenceRadius,
                     settings,
                     resolution,
                     renderResolution,
                     _cameraState);
+                ViewVariant[] viewVariants = ResolveExportViewVariants(settings);
+                int totalFrames = checked(frameCount * viewVariants.Length);
+                int completedFrames = 0;
 
-                if (exportSpritesheet)
-                {
-                    spritesheetPlan = ResolveSpritesheetPlan(
-                        frameCount,
-                        resolution,
-                        paddingPx,
-                        settings.SpritesheetLayout,
-                        progress);
-
-                    spritesheetBitmap = new SKBitmap(new SKImageInfo(
-                        spritesheetPlan.Value.Width,
-                        spritesheetPlan.Value.Height,
-                        SKColorType.Rgba8888,
-                        SKAlphaType.Premul));
-                    spritesheetCanvas = new SKCanvas(spritesheetBitmap);
-                    spritesheetCanvas.Clear(new SKColor(0, 0, 0, 0));
-                    spritesheetPaint = new SKPaint
-                    {
-                        BlendMode = SKBlendMode.Src,
-                        IsAntialias = false
-                    };
-                }
+                string? firstFramePath = null;
+                string? firstSpritesheetPath = null;
+                int spritesheetWidth = 0;
+                int spritesheetHeight = 0;
+                SpritesheetLayout? effectiveLayout = null;
 
                 using var frameBitmap = new SKBitmap(new SKImageInfo(
                     resolution,
@@ -177,83 +159,144 @@ namespace KnobForge.Rendering
                 };
 
                 float angleStep = 2f * MathF.PI / frameCount;
-                for (int i = 0; i < frameCount; i++)
+                for (int viewIndex = 0; viewIndex < viewVariants.Length; viewIndex++)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    progress?.Report(new KnobExportProgress(i, frameCount, $"Rendering {i + 1}/{frameCount}"));
 
-                    float angle = i * angleStep;
-                    for (int modelIndex = 0; modelIndex < originalRotations.Count; modelIndex++)
+                    ViewVariant viewVariant = viewVariants[viewIndex];
+                    ViewportCameraState exportViewportCamera = ApplyViewVariant(baseExportViewportCamera, viewVariant);
+
+                    SpritesheetPlan? spritesheetPlan = null;
+                    SKBitmap? spritesheetBitmap = null;
+                    SKCanvas? spritesheetCanvas = null;
+                    SKPaint? spritesheetPaint = null;
+                    try
                     {
-                        var entry = originalRotations[modelIndex];
-                        entry.Model.RotationRadians = entry.Rotation + angle;
+                        if (exportSpritesheet)
+                        {
+                            spritesheetPlan = ResolveSpritesheetPlan(
+                                frameCount,
+                                resolution,
+                                paddingPx,
+                                settings.SpritesheetLayout,
+                                progress);
+
+                            spritesheetBitmap = new SKBitmap(new SKImageInfo(
+                                spritesheetPlan.Value.Width,
+                                spritesheetPlan.Value.Height,
+                                SKColorType.Rgba8888,
+                                SKAlphaType.Premul));
+                            spritesheetCanvas = new SKCanvas(spritesheetBitmap);
+                            spritesheetCanvas.Clear(new SKColor(0, 0, 0, 0));
+                            spritesheetPaint = new SKPaint
+                            {
+                                BlendMode = SKBlendMode.Src,
+                                IsAntialias = false
+                            };
+
+                            if (effectiveLayout == null)
+                            {
+                                spritesheetWidth = spritesheetPlan.Value.Width;
+                                spritesheetHeight = spritesheetPlan.Value.Height;
+                                effectiveLayout = spritesheetPlan.Value.Layout;
+                            }
+                        }
+
+                        for (int i = 0; i < frameCount; i++)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                            progress?.Report(new KnobExportProgress(
+                                completedFrames,
+                                totalFrames,
+                                $"Rendering {viewVariant.DisplayLabel} {i + 1}/{frameCount}"));
+
+                            float angle = i * angleStep;
+                            for (int modelIndex = 0; modelIndex < originalRotations.Count; modelIndex++)
+                            {
+                                var entry = originalRotations[modelIndex];
+                                entry.Model.RotationRadians = entry.Rotation + angle;
+                            }
+
+                            frameCanvas.Clear(new SKColor(0, 0, 0, 0));
+
+                            using SKBitmap? gpuFrame = _gpuFrameProvider(renderResolution, renderResolution, exportViewportCamera);
+                            if (gpuFrame == null)
+                            {
+                                throw new InvalidOperationException("GPU frame provider returned null frame.");
+                            }
+
+                            if (supersampleScale > 1 || gpuFrame.Width != resolution || gpuFrame.Height != resolution)
+                            {
+                                frameCanvas.DrawBitmap(gpuFrame, new SKRect(0, 0, resolution, resolution), downsamplePaint);
+                            }
+                            else
+                            {
+                                frameCanvas.DrawBitmap(gpuFrame, 0, 0, downsamplePaint);
+                            }
+
+                            if (exportFrames)
+                            {
+                                cancellationToken.ThrowIfCancellationRequested();
+                                string framePath = ResolveFramePath(outputDirectory, baseName, viewVariant.FileTag, i, frameDigits);
+                                using SKData framePng = frameBitmap.Encode(SKEncodedImageFormat.Png, 100);
+                                using FileStream frameOutput = File.Create(framePath);
+                                framePng.SaveTo(frameOutput);
+                                firstFramePath ??= framePath;
+                            }
+
+                            if (exportSpritesheet && spritesheetCanvas != null && spritesheetPaint != null && spritesheetPlan.HasValue)
+                            {
+                                var origin = spritesheetPlan.Value.GetFrameOrigin(i);
+                                spritesheetCanvas.DrawBitmap(frameBitmap, origin.X, origin.Y, spritesheetPaint);
+                            }
+
+                            completedFrames++;
+                        }
+
+                        if (exportSpritesheet && spritesheetBitmap != null)
+                        {
+                            progress?.Report(new KnobExportProgress(
+                                completedFrames,
+                                totalFrames,
+                                $"Writing spritesheet ({viewVariant.DisplayLabel})"));
+                            cancellationToken.ThrowIfCancellationRequested();
+
+                            string spritesheetPath = ResolveSpritesheetPath(outputDirectory, baseName, viewVariant.FileTag);
+                            using SKData sheetPng = spritesheetBitmap.Encode(SKEncodedImageFormat.Png, 100);
+                            using FileStream sheetOutput = File.Create(spritesheetPath);
+                            sheetPng.SaveTo(sheetOutput);
+                            firstSpritesheetPath ??= spritesheetPath;
+                        }
                     }
-
-                    frameCanvas.Clear(new SKColor(0, 0, 0, 0));
-
-                    using SKBitmap? gpuFrame = _gpuFrameProvider(renderResolution, renderResolution, exportViewportCamera);
-                    if (gpuFrame == null)
+                    finally
                     {
-                        throw new InvalidOperationException("GPU frame provider returned null frame.");
-                    }
-
-                    if (supersampleScale > 1 || gpuFrame.Width != resolution || gpuFrame.Height != resolution)
-                    {
-                        frameCanvas.DrawBitmap(gpuFrame, new SKRect(0, 0, resolution, resolution), downsamplePaint);
-                    }
-                    else
-                    {
-                        frameCanvas.DrawBitmap(gpuFrame, 0, 0, downsamplePaint);
-                    }
-
-                    if (exportFrames)
-                    {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        string framePath = ResolveFramePath(outputDirectory, baseName, i, frameDigits);
-                        using SKData framePng = frameBitmap.Encode(SKEncodedImageFormat.Png, 100);
-                        using FileStream frameOutput = File.Create(framePath);
-                        framePng.SaveTo(frameOutput);
-                    }
-
-                    if (exportSpritesheet && spritesheetCanvas != null && spritesheetPaint != null && spritesheetPlan.HasValue)
-                    {
-                        var origin = spritesheetPlan.Value.GetFrameOrigin(i);
-                        spritesheetCanvas.DrawBitmap(frameBitmap, origin.X, origin.Y, spritesheetPaint);
+                        spritesheetPaint?.Dispose();
+                        spritesheetCanvas?.Dispose();
+                        spritesheetBitmap?.Dispose();
                     }
                 }
 
-                if (exportSpritesheet && spritesheetBitmap != null)
-                {
-                    progress?.Report(new KnobExportProgress(frameCount, frameCount, "Packing spritesheet"));
-                }
+                progress?.Report(new KnobExportProgress(totalFrames, totalFrames, "Writing files"));
 
-                progress?.Report(new KnobExportProgress(frameCount, frameCount, "Writing files"));
-
-                if (exportSpritesheet && spritesheetBitmap != null)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    using SKData sheetPng = spritesheetBitmap.Encode(SKEncodedImageFormat.Png, 100);
-                    using FileStream sheetOutput = File.Create(paths.SpritesheetPath);
-                    sheetPng.SaveTo(sheetOutput);
-                }
+                string primaryFirstFramePath = ResolveFramePath(outputDirectory, baseName, 0, frameDigits);
+                string primarySpritesheetPath = ResolveSpritesheetPath(outputDirectory, baseName);
 
                 return new KnobExportResult
                 {
                     OutputDirectory = outputDirectory,
-                    FirstFramePath = paths.FirstFramePath,
-                    SpritesheetPath = exportSpritesheet ? paths.SpritesheetPath : null,
-                    RenderedFrames = frameCount,
-                    SpritesheetWidth = spritesheetPlan?.Width ?? 0,
-                    SpritesheetHeight = spritesheetPlan?.Height ?? 0,
-                    EffectiveSpritesheetLayout = spritesheetPlan?.Layout
+                    FirstFramePath = exportFrames
+                        ? (firstFramePath ?? primaryFirstFramePath)
+                        : (firstSpritesheetPath ?? primarySpritesheetPath),
+                    SpritesheetPath = exportSpritesheet ? (firstSpritesheetPath ?? primarySpritesheetPath) : null,
+                    ExportedViewCount = viewVariants.Length,
+                    RenderedFrames = totalFrames,
+                    SpritesheetWidth = spritesheetWidth,
+                    SpritesheetHeight = spritesheetHeight,
+                    EffectiveSpritesheetLayout = effectiveLayout
                 };
             }
             finally
             {
-                spritesheetPaint?.Dispose();
-                spritesheetCanvas?.Dispose();
-                spritesheetBitmap?.Dispose();
-
                 foreach (var entry in originalRotations)
                 {
                     entry.Model.RotationRadians = entry.Rotation;
@@ -313,6 +356,16 @@ namespace KnobForge.Rendering
             if (settings.Padding < 0f)
             {
                 throw new ArgumentOutOfRangeException(nameof(settings.Padding), "Padding must be >= 0.");
+            }
+
+            if (settings.OrbitVariantYawOffsetDeg < 0f || settings.OrbitVariantYawOffsetDeg > 180f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(settings.OrbitVariantYawOffsetDeg), "OrbitVariantYawOffsetDeg must be between 0 and 180.");
+            }
+
+            if (settings.OrbitVariantPitchOffsetDeg < 0f || settings.OrbitVariantPitchOffsetDeg > 85f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(settings.OrbitVariantPitchOffsetDeg), "OrbitVariantPitchOffsetDeg must be between 0 and 85.");
             }
 
         }
@@ -644,6 +697,48 @@ namespace KnobForge.Rendering
             return new ViewportCameraState(30f, -20f, zoomFallback, SKPoint.Empty);
         }
 
+        private static ViewVariant[] ResolveExportViewVariants(KnobExportSettings settings)
+        {
+            var variants = new List<ViewVariant>(5);
+            var dedupe = new HashSet<(int Yaw, int Pitch)>();
+
+            void AddVariant(ViewVariant variant)
+            {
+                var key = (QuantizeAngle(variant.YawOffsetDeg), QuantizeAngle(variant.PitchOffsetDeg));
+                if (dedupe.Add(key))
+                {
+                    variants.Add(variant);
+                }
+            }
+
+            AddVariant(new ViewVariant(string.Empty, "Primary", 0f, 0f));
+
+            if (settings.ExportOrbitVariants)
+            {
+                float yaw = MathF.Abs(settings.OrbitVariantYawOffsetDeg);
+                float pitch = MathF.Abs(settings.OrbitVariantPitchOffsetDeg);
+
+                AddVariant(new ViewVariant("under_left", "Under Left", -yaw, pitch));
+                AddVariant(new ViewVariant("under_right", "Under Right", yaw, pitch));
+                AddVariant(new ViewVariant("over_left", "Over Left", -yaw, -pitch));
+                AddVariant(new ViewVariant("over_right", "Over Right", yaw, -pitch));
+            }
+
+            return variants.ToArray();
+        }
+
+        private static ViewportCameraState ApplyViewVariant(ViewportCameraState baseState, ViewVariant variant)
+        {
+            float yaw = baseState.OrbitYawDeg + variant.YawOffsetDeg;
+            float pitch = Math.Clamp(baseState.OrbitPitchDeg + variant.PitchOffsetDeg, -85f, 85f);
+            return new ViewportCameraState(yaw, pitch, baseState.Zoom, baseState.PanPx);
+        }
+
+        private static int QuantizeAngle(float value)
+        {
+            return (int)MathF.Round(value * 1000f);
+        }
+
         private static float ComputeSafeZoomForFrame(
             float referenceRadius,
             int renderResolution,
@@ -770,13 +865,25 @@ namespace KnobForge.Rendering
 
         private static string ResolveFramePath(string outputDirectory, string baseName, int frameIndex, int digits)
         {
+            return ResolveFramePath(outputDirectory, baseName, string.Empty, frameIndex, digits);
+        }
+
+        private static string ResolveFramePath(string outputDirectory, string baseName, string viewTag, int frameIndex, int digits)
+        {
             string number = frameIndex.ToString($"D{digits}");
-            return Path.Combine(outputDirectory, $"{baseName}_{number}.png");
+            string prefix = string.IsNullOrWhiteSpace(viewTag) ? baseName : $"{baseName}_{viewTag}";
+            return Path.Combine(outputDirectory, $"{prefix}_{number}.png");
         }
 
         private static string ResolveSpritesheetPath(string outputDirectory, string baseName)
         {
-            return Path.Combine(outputDirectory, $"{baseName}_spritesheet.png");
+            return ResolveSpritesheetPath(outputDirectory, baseName, string.Empty);
+        }
+
+        private static string ResolveSpritesheetPath(string outputDirectory, string baseName, string viewTag)
+        {
+            string prefix = string.IsNullOrWhiteSpace(viewTag) ? baseName : $"{baseName}_{viewTag}";
+            return Path.Combine(outputDirectory, $"{prefix}_spritesheet.png");
         }
 
         private static ExportPathPlan ResolveExportPaths(
@@ -879,6 +986,12 @@ namespace KnobForge.Rendering
                 return (gx, gy);
             }
         }
+
+        private readonly record struct ViewVariant(
+            string FileTag,
+            string DisplayLabel,
+            float YawOffsetDeg,
+            float PitchOffsetDeg);
 
         private readonly record struct ExportPathPlan(
             string OutputDirectory,

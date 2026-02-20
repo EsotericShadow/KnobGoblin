@@ -26,6 +26,9 @@ namespace KnobForge.App.Views
         private const int MaxResolution = 16384;
         private const int MinSupersample = 1;
         private const int MaxSupersample = 4;
+        private const float MinOrbitOffsetDeg = 0f;
+        private const float MaxOrbitYawOffsetDeg = 180f;
+        private const float MaxOrbitPitchOffsetDeg = 85f;
 
         private readonly KnobProject _project;
         private readonly OrientationDebug _orientation;
@@ -39,6 +42,9 @@ namespace KnobForge.App.Views
         private readonly ComboBox _supersampleComboBox;
         private readonly TextBox _paddingTextBox;
         private readonly TextBox _cameraDistanceScaleTextBox;
+        private readonly CheckBox _exportOrbitVariantsCheckBox;
+        private readonly TextBox _orbitYawOffsetTextBox;
+        private readonly TextBox _orbitPitchOffsetTextBox;
         private readonly ComboBox _filterPresetComboBox;
         private readonly TextBox _baseNameTextBox;
         private readonly TextBox _outputFolderTextBox;
@@ -92,6 +98,12 @@ namespace KnobForge.App.Views
                 ?? throw new InvalidOperationException("PaddingTextBox not found.");
             _cameraDistanceScaleTextBox = this.FindControl<TextBox>("CameraDistanceScaleTextBox")
                 ?? throw new InvalidOperationException("CameraDistanceScaleTextBox not found.");
+            _exportOrbitVariantsCheckBox = this.FindControl<CheckBox>("ExportOrbitVariantsCheckBox")
+                ?? throw new InvalidOperationException("ExportOrbitVariantsCheckBox not found.");
+            _orbitYawOffsetTextBox = this.FindControl<TextBox>("OrbitYawOffsetTextBox")
+                ?? throw new InvalidOperationException("OrbitYawOffsetTextBox not found.");
+            _orbitPitchOffsetTextBox = this.FindControl<TextBox>("OrbitPitchOffsetTextBox")
+                ?? throw new InvalidOperationException("OrbitPitchOffsetTextBox not found.");
             _filterPresetComboBox = this.FindControl<ComboBox>("FilterPresetComboBox")
                 ?? throw new InvalidOperationException("FilterPresetComboBox not found.");
             _baseNameTextBox = this.FindControl<TextBox>("BaseNameTextBox")
@@ -129,6 +141,10 @@ namespace KnobForge.App.Views
             _filterPresetComboBox.ItemsSource = Enum.GetValues<ExportFilterPreset>();
 
             _outputFolderTextBox.Text = GetDefaultOutputFolder();
+            var defaultExportSettings = new KnobExportSettings();
+            _exportOrbitVariantsCheckBox.IsChecked = defaultExportSettings.ExportOrbitVariants;
+            _orbitYawOffsetTextBox.Text = defaultExportSettings.OrbitVariantYawOffsetDeg.ToString("0.###", CultureInfo.InvariantCulture);
+            _orbitPitchOffsetTextBox.Text = defaultExportSettings.OrbitVariantPitchOffsetDeg.ToString("0.###", CultureInfo.InvariantCulture);
             _exportProgressBar.Value = 0d;
             _scratchParityNoteTextBlock.Text = "Scratch carve parity: export uses the GPU viewport path. Expect close match; tiny edge differences can appear on ultra-thin strokes or fallback hits.";
             _statusTextBlock.Text = CanUseGpuExport
@@ -140,10 +156,12 @@ namespace KnobForge.App.Views
             _startRenderButton.Click += OnStartRenderButtonClick;
             _cancelButton.Click += OnCancelButtonClick;
             _exportSpritesheetCheckBox.IsCheckedChanged += OnExportSpritesheetCheckedChanged;
+            _exportOrbitVariantsCheckBox.IsCheckedChanged += OnExportOrbitVariantsCheckedChanged;
             Closing += OnWindowClosing;
 
             ApplyOutputStrategy(ExportOutputStrategies.Get(ExportOutputStrategy.JuceFilmstripBestDefault));
             UpdateSpritesheetLayoutEnabled();
+            UpdateOrbitVariantControlsEnabled();
             _startRenderButton.IsEnabled = CanUseGpuExport;
         }
 
@@ -207,6 +225,7 @@ namespace KnobForge.App.Views
             {
                 _isApplyingOutputStrategy = false;
                 UpdateSpritesheetLayoutEnabled();
+                UpdateOrbitVariantControlsEnabled();
             }
         }
 
@@ -368,6 +387,11 @@ namespace KnobForge.App.Views
             UpdateSpritesheetLayoutEnabled();
         }
 
+        private void OnExportOrbitVariantsCheckedChanged(object? sender, RoutedEventArgs e)
+        {
+            UpdateOrbitVariantControlsEnabled();
+        }
+
         private void OnWindowClosing(object? sender, WindowClosingEventArgs e)
         {
             if (!_isRendering)
@@ -398,6 +422,7 @@ namespace KnobForge.App.Views
             _settingsPanel.IsEnabled = !isRendering;
             _startRenderButton.IsEnabled = !isRendering && CanUseGpuExport;
             _cancelButton.Content = isRendering ? "Cancel Render" : "Cancel";
+            UpdateOrbitVariantControlsEnabled();
 
             if (!isRendering)
             {
@@ -412,6 +437,13 @@ namespace KnobForge.App.Views
         private void UpdateSpritesheetLayoutEnabled()
         {
             _spritesheetLayoutComboBox.IsEnabled = !_isRendering && _exportSpritesheetCheckBox.IsChecked == true;
+        }
+
+        private void UpdateOrbitVariantControlsEnabled()
+        {
+            bool enabled = !_isRendering && _exportOrbitVariantsCheckBox.IsChecked == true;
+            _orbitYawOffsetTextBox.IsEnabled = enabled;
+            _orbitPitchOffsetTextBox.IsEnabled = enabled;
         }
 
         private bool TryBuildRequest(
@@ -450,6 +482,36 @@ namespace KnobForge.App.Views
             if (!TryParseFloat(_cameraDistanceScaleTextBox.Text, 0.0001f, float.MaxValue, "CameraDistanceScale", out float cameraDistanceScale, out error))
             {
                 return false;
+            }
+
+            bool exportOrbitVariants = _exportOrbitVariantsCheckBox.IsChecked == true;
+            var orbitVariantDefaults = new KnobExportSettings();
+            float orbitYawOffsetDeg = orbitVariantDefaults.OrbitVariantYawOffsetDeg;
+            float orbitPitchOffsetDeg = orbitVariantDefaults.OrbitVariantPitchOffsetDeg;
+
+            if (exportOrbitVariants)
+            {
+                if (!TryParseFloat(
+                        _orbitYawOffsetTextBox.Text,
+                        MinOrbitOffsetDeg,
+                        MaxOrbitYawOffsetDeg,
+                        "Orbit yaw offset",
+                        out orbitYawOffsetDeg,
+                        out error))
+                {
+                    return false;
+                }
+
+                if (!TryParseFloat(
+                        _orbitPitchOffsetTextBox.Text,
+                        MinOrbitOffsetDeg,
+                        MaxOrbitPitchOffsetDeg,
+                        "Orbit pitch offset",
+                        out orbitPitchOffsetDeg,
+                        out error))
+                {
+                    return false;
+                }
             }
 
             bool exportFrames = _exportFramesCheckBox.IsChecked == true;
@@ -517,7 +579,10 @@ namespace KnobForge.App.Views
                 SpritesheetLayout = layout,
                 Padding = padding,
                 CameraDistanceScale = cameraDistanceScale,
-                FilterPreset = filterPreset
+                FilterPreset = filterPreset,
+                ExportOrbitVariants = exportOrbitVariants,
+                OrbitVariantYawOffsetDeg = orbitYawOffsetDeg,
+                OrbitVariantPitchOffsetDeg = orbitPitchOffsetDeg
             };
 
             return true;

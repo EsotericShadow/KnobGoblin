@@ -56,6 +56,9 @@ namespace KnobForge.App.Views
             RegisterSearchItem(_brushOpacitySlider, "Brush Opacity", "brush", "opacity");
             RegisterSearchItem(_paintCoatMetallicSlider, "Paint Coat Metallic", "paint", "coat", "metallic", "layer");
             RegisterSearchItem(_paintCoatRoughnessSlider, "Paint Coat Roughness", "paint", "coat", "roughness", "hardness", "layer");
+            RegisterSearchItem(_clearCoatAmountSlider, "Clear Coat Amount", "clearcoat", "coat", "varnish", "amount");
+            RegisterSearchItem(_clearCoatRoughnessSlider, "Clear Coat Roughness", "clearcoat", "coat", "roughness", "varnish");
+            RegisterSearchItem(_anisotropyAngleSlider, "Anisotropy Angle", "anisotropy", "brushed", "direction", "angle");
             RegisterSearchItem(_scratchAbrasionTypeCombo, "Scratch Abrasion Type", "scratch", "abrasion", "tool");
             RegisterSearchItem(_scratchWidthSlider, "Scratch Width", "scratch", "width");
             RegisterSearchItem(_scratchDepthSlider, "Scratch Depth", "scratch", "depth", "carve");
@@ -64,6 +67,8 @@ namespace KnobForge.App.Views
             RegisterSearchItem(_scratchExposeColorRSlider, "Scratch Exposed Color R", "scratch", "exposed", "silver", "color");
             RegisterSearchItem(_scratchExposeColorGSlider, "Scratch Exposed Color G", "scratch", "exposed", "silver", "color");
             RegisterSearchItem(_scratchExposeColorBSlider, "Scratch Exposed Color B", "scratch", "exposed", "silver", "color");
+            RegisterSearchItem(_scratchExposeMetallicSlider, "Scratch Exposed Metallic", "scratch", "exposed", "metallic", "metal");
+            RegisterSearchItem(_scratchExposeRoughnessSlider, "Scratch Exposed Roughness", "scratch", "exposed", "roughness");
 
             RegisterSearchItem(_collarPresetCombo, "Collar Preset", "collar", "snake", "ouroboros");
             RegisterSearchItem(_collarMeshPathTextBox, "Collar Mesh Path", "collar", "mesh", "import", "glb", "stl");

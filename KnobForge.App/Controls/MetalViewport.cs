@@ -1372,7 +1372,13 @@ namespace KnobForge.App.Controls
             uniforms.MaterialSurfaceBrushParams = new Vector4(brushStrength, brushDensity, surfaceCharacter, geometryKeep);
             uniforms.WeatherParams = new Vector4(rustAmount, wearAmount, gunkAmount, Math.Clamp(project?.BrushDarkness ?? 0.58f, 0f, 1f));
             Vector3 scratchExposeColor = project?.ScratchExposeColor ?? new Vector3(0.88f, 0.88f, 0.90f);
-            uniforms.ScratchExposeColorAndStrength = new Vector4(scratchExposeColor, 1f);
+            float scratchExposeMetallic = Math.Clamp(project?.ScratchExposeMetallic ?? 0.92f, 0f, 1f);
+            uniforms.ScratchExposeColorAndStrength = new Vector4(scratchExposeColor, scratchExposeMetallic);
+            uniforms.AdvancedMaterialParams = new Vector4(
+                Math.Clamp(project?.ScratchExposeRoughness ?? 0.20f, 0.04f, 1f),
+                Math.Clamp(project?.ClearCoatAmount ?? 0f, 0f, 1f),
+                Math.Clamp(project?.ClearCoatRoughness ?? 0.18f, 0.04f, 1f),
+                (project?.AnisotropyAngleDegrees ?? 0f) * (MathF.PI / 180f));
             uniforms.IndicatorParams0 = new Vector4(indicatorEnabled, indicatorShape, indicatorWidth, indicatorLength);
             // Keep top-cap/indicator normalization stable even when scene bounds grow (e.g. collar enabled).
             uniforms.IndicatorParams1 = new Vector4(indicatorRoundness, indicatorPosition, knobTopRadius, pearlescence);
@@ -3934,13 +3940,48 @@ namespace KnobForge.App.Controls
             _optionDepthRampActive = _isPainting &&
                 _project?.BrushChannel == PaintChannel.Scratch &&
                 _lastKnownModifiers.HasFlag(KeyModifiers.Alt);
+
             if (e.Key == Key.R)
             {
                 ResetCamera();
                 e.Handled = true;
             }
+            else
+            {
+                float panStep = GetKeyboardPanStep(e.KeyModifiers);
+                Vector2 panDelta = e.Key switch
+                {
+                    Key.Left => new Vector2(-panStep, 0f),
+                    Key.Right => new Vector2(panStep, 0f),
+                    Key.Up => new Vector2(0f, -panStep),
+                    Key.Down => new Vector2(0f, panStep),
+                    _ => Vector2.Zero
+                };
+
+                if (panDelta != Vector2.Zero)
+                {
+                    _panPx += panDelta;
+                    InvalidateGpu();
+                    e.Handled = true;
+                }
+            }
 
             PublishPaintHudSnapshot();
+        }
+
+        private static float GetKeyboardPanStep(KeyModifiers modifiers)
+        {
+            if (modifiers.HasFlag(KeyModifiers.Shift))
+            {
+                return 64f;
+            }
+
+            if (modifiers.HasFlag(KeyModifiers.Alt))
+            {
+                return 8f;
+            }
+
+            return 24f;
         }
 
         public void HandleKeyUpFromOverlay(KeyEventArgs e)
@@ -3954,7 +3995,10 @@ namespace KnobForge.App.Controls
 
         private void OnForwardedPointerPressed(PointerPressedEventArgs e, PointerPoint point, Point pos, InputElement overlay)
         {
-            Focus();
+            if (!overlay.Focus())
+            {
+                Focus();
+            }
             _lastPointer = pos;
             bool commandDown = IsCommandDown(e.KeyModifiers);
 
@@ -5825,6 +5869,7 @@ fragment float4 fragment_light_gizmo_overlay(
             public Vector4 MaterialSurfaceBrushParams;
             public Vector4 WeatherParams;
             public Vector4 ScratchExposeColorAndStrength;
+            public Vector4 AdvancedMaterialParams;
             public Vector4 IndicatorParams0;
             public Vector4 IndicatorParams1;
             public Vector4 IndicatorColorAndBlend;

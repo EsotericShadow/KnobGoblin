@@ -498,6 +498,7 @@ struct GpuUniforms
     float4 materialSurfaceBrushParams;
     float4 weatherParams;
     float4 scratchExposeColorAndStrength;
+    float4 advancedMaterialParams;
     float4 indicatorParams0;
     float4 indicatorParams1;
     float4 indicatorColorAndBlend;
@@ -791,7 +792,11 @@ fragment float4 fragment_main(
     float paintCoatMetallic = clamp(uniforms.debugBasisParams.z, 0.0, 1.0);
     float paintCoatRoughness = clamp(uniforms.debugBasisParams.w, 0.04, 1.0);
     float3 scratchExposeColor = Clamp01(uniforms.scratchExposeColorAndStrength.xyz);
-    float scratchExposeStrength = clamp(uniforms.scratchExposeColorAndStrength.w, 0.0, 1.0);
+    float scratchExposeMetallic = clamp(uniforms.scratchExposeColorAndStrength.w, 0.0, 1.0);
+    float scratchExposeRoughness = clamp(uniforms.advancedMaterialParams.x, 0.04, 1.0);
+    float clearCoatAmount = clamp(uniforms.advancedMaterialParams.y, 0.0, 1.0);
+    float clearCoatRoughness = clamp(uniforms.advancedMaterialParams.z, 0.04, 1.0);
+    float anisotropyAngleRadians = uniforms.advancedMaterialParams.w;
     float microInfluence = clamp(uniforms.microDetailParams.x, 0.0, 1.0);
     float fadeStart = max(0.1, uniforms.microDetailParams.y);
     float fadeEnd = max(fadeStart + 1e-3, uniforms.microDetailParams.z);
@@ -971,11 +976,13 @@ fragment float4 fragment_main(
     baseColor = mix(baseColor, wearColor, clamp(wearMask * 0.24, 0.0, 1.0));
     float grimeDarken = clamp((rustMask * 0.18 + gunkMask * 0.55) * (0.25 + 0.75 * brushDarkness), 0.0, 0.85);
     baseColor *= (1.0 - grimeDarken);
-    float scratchReveal = clamp(scratchMask * scratchExposeStrength, 0.0, 1.0);
+    float scratchReveal = clamp(scratchMask, 0.0, 1.0);
     baseColor = mix(baseColor, scratchExposeColor, scratchReveal);
 
-    roughness = clamp(roughness + rustMask * 0.34 + gunkMask * 0.62 - wearMask * 0.05 - scratchMask * 0.14, 0.04, 1.0);
-    metallic = clamp(metallic - rustMask * 0.62 - gunkMask * 0.30 + scratchMask * 0.10, 0.0, 1.0);
+    roughness = clamp(roughness + rustMask * 0.34 + gunkMask * 0.62 - wearMask * 0.05, 0.04, 1.0);
+    metallic = clamp(metallic - rustMask * 0.62 - gunkMask * 0.30, 0.0, 1.0);
+    roughness = mix(roughness, scratchExposeRoughness, scratchReveal);
+    metallic = mix(metallic, scratchExposeMetallic, scratchReveal);
 
     float shininess = 4.0 + ((128.0 - 4.0) * (1.0 - roughness));
 
@@ -1005,6 +1012,19 @@ fragment float4 fragment_main(
     if (dot(bitangent, bitangent) <= 1e-8)
     {
         bitangent = normalize(cross(normal, tangent));
+    }
+
+    if (abs(anisotropyAngleRadians) > 1e-5)
+    {
+        float angleCos = cos(anisotropyAngleRadians);
+        float angleSin = sin(anisotropyAngleRadians);
+        float3 rotatedTangent = normalize(tangent * angleCos + bitangent * angleSin);
+        float3 rotatedBitangent = normalize(cross(normal, rotatedTangent));
+        if (dot(rotatedBitangent, rotatedBitangent) > 1e-8)
+        {
+            tangent = rotatedTangent;
+            bitangent = rotatedBitangent;
+        }
     }
 
     int basisDebugMode = int(round(uniforms.debugBasisParams.x));
@@ -1040,6 +1060,9 @@ fragment float4 fragment_main(
     float3 metalSpecColor = baseColor / maxBase;
     float3 F0 = mix(float3(0.04), metalSpecColor, metallic);
     float3 fresnelView = F0 + (float3(1.0) - F0) * pow(1.0 - NdotV, 5.0);
+    float clearCoatF0 = 0.04;
+    float clearCoatAlpha = max(0.02, clearCoatRoughness * clearCoatRoughness);
+    float clearCoatAlphaSq = clearCoatAlpha * clearCoatAlpha;
 
     int lightCount = min(MAX_LIGHTS, int(round(uniforms.projectionOffsetsAndLightCount.z)));
     for (int i = 0; i < lightCount; i++)
@@ -1104,9 +1127,23 @@ fragment float4 fragment_main(
         float artisticSpecBoost = 0.55 + 0.45 * max(0.0, light.params0.z);
         float3 specularTerm = specBrdf * NdotL;
         specularTerm *= specularStrength * effectiveIntensity * metalSpecBoost * max(0.0, specShapeScale) * artisticSpecBoost;
+        float clearCoatTerm = 0.0;
+        if (clearCoatAmount > 1e-4 && NdotL > 1e-5)
+        {
+            float coatDDenom = (NdotH * NdotH) * (clearCoatAlphaSq - 1.0) + 1.0;
+            float coatD = clearCoatAlphaSq / (3.14159265 * coatDDenom * coatDDenom + 1e-6);
+            float coatK = ((clearCoatRoughness + 1.0) * (clearCoatRoughness + 1.0)) / 8.0;
+            float coatGv = NdotV / (NdotV * (1.0 - coatK) + coatK);
+            float coatGl = NdotL / (NdotL * (1.0 - coatK) + coatK);
+            float coatG = coatGv * coatGl;
+            float coatF = clearCoatF0 + (1.0 - clearCoatF0) * pow(1.0 - VdotH, 5.0);
+            float coatBrdf = (coatD * coatG * coatF) / max(4.0 * NdotV * NdotL, 1e-4);
+            clearCoatTerm = coatBrdf * NdotL * clearCoatAmount * effectiveIntensity;
+        }
 
         accum += Hadamard(baseColor, lightColor) * (shapedDiffuse * diffuseStrength);
         accum += Hadamard(specularTerm, lightColor);
+        accum += lightColor * clearCoatTerm;
     }
 
     float3 envTop = uniforms.environmentTopColorAndIntensity.xyz;
@@ -1133,6 +1170,12 @@ fragment float4 fragment_main(
     float envBrush = mix(1.0, 1.08, brushStrength * topMask * (0.35 + (0.65 * surfaceCharacter)));
     accum += envDiffuse * envIntensity * envDiffuseEnergy;
     accum += envSpecular * envIntensity * roughEnergy * anisotropicEnergy * envBrush;
+    if (clearCoatAmount > 1e-4)
+    {
+        float clearCoatFresnelView = clearCoatF0 + (1.0 - clearCoatF0) * pow(1.0 - NdotV, 5.0);
+        float clearCoatEnvEnergy = mix(0.70, 0.24, clearCoatRoughness * envRoughMix);
+        accum += envColor * clearCoatFresnelView * envIntensity * clearCoatAmount * clearCoatEnvEnergy;
+    }
 
     if (pearlescence > 1e-4)
     {

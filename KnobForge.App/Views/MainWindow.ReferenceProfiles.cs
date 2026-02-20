@@ -18,6 +18,7 @@ namespace KnobForge.App.Views
             WriteIndented = true,
             Converters = { new JsonStringEnumConverter() }
         };
+        private const string DefaultUserReferenceProfileName = "goodone";
         private const int DestructiveReferenceProfileConfirmWindowSeconds = 8;
         private string? _pendingProfileDestructiveActionToken;
         private DateTime _pendingProfileDestructiveActionExpiresUtc;
@@ -68,6 +69,8 @@ namespace KnobForge.App.Views
                     profile.Name = normalizedName;
                     _userReferenceProfiles.Add(profile);
                 }
+
+                ApplyDefaultUserReferenceProfileIfAvailable();
             }
             catch (Exception ex)
             {
@@ -477,6 +480,36 @@ namespace KnobForge.App.Views
             return value.Trim();
         }
 
+        private void ApplyDefaultUserReferenceProfileIfAvailable()
+        {
+            UserReferenceProfile? defaultProfile = _userReferenceProfiles.FirstOrDefault(profile =>
+                string.Equals(profile.Name, DefaultUserReferenceProfileName, StringComparison.OrdinalIgnoreCase));
+            if (defaultProfile is null)
+            {
+                return;
+            }
+
+            ModelNode? model = GetModelNode();
+            if (model is null)
+            {
+                return;
+            }
+
+            MaterialNode material = EnsureMaterialNode(model);
+            CollarNode? collar = defaultProfile.Snapshot.CollarSnapshot is not null
+                ? EnsureCollarNode()
+                : GetCollarNode();
+
+            _selectedUserReferenceProfileName = defaultProfile.Name;
+            model.ReferenceStyle = ReferenceKnobStyle.Custom;
+            ApplyUserReferenceProfileSnapshot(_project, model, material, defaultProfile.Snapshot, collar);
+
+            if (_referenceStyleSaveNameTextBox != null)
+            {
+                _referenceStyleSaveNameTextBox.Text = defaultProfile.Name;
+            }
+        }
+
         private static MaterialNode EnsureMaterialNode(ModelNode model)
         {
             MaterialNode? material = model.Children.OfType<MaterialNode>().FirstOrDefault();
@@ -590,6 +623,9 @@ namespace KnobForge.App.Views
                 BrushDarkness = project.BrushDarkness,
                 PaintCoatMetallic = project.PaintCoatMetallic,
                 PaintCoatRoughness = project.PaintCoatRoughness,
+                ClearCoatAmount = project.ClearCoatAmount,
+                ClearCoatRoughness = project.ClearCoatRoughness,
+                AnisotropyAngleDegrees = project.AnisotropyAngleDegrees,
                 PaintColorX = project.PaintColor.X,
                 PaintColorY = project.PaintColor.Y,
                 PaintColorZ = project.PaintColor.Z,
@@ -600,6 +636,8 @@ namespace KnobForge.App.Views
                 ScratchExposeColorX = project.ScratchExposeColor.X,
                 ScratchExposeColorY = project.ScratchExposeColor.Y,
                 ScratchExposeColorZ = project.ScratchExposeColor.Z,
+                ScratchExposeMetallic = project.ScratchExposeMetallic,
+                ScratchExposeRoughness = project.ScratchExposeRoughness,
                 SpiralNormalInfluenceEnabled = project.SpiralNormalInfluenceEnabled,
                 SpiralNormalLodFadeStart = project.SpiralNormalLodFadeStart,
                 SpiralNormalLodFadeEnd = project.SpiralNormalLodFadeEnd,
@@ -759,6 +797,9 @@ namespace KnobForge.App.Views
             project.BrushDarkness = snapshot.BrushDarkness;
             project.PaintCoatMetallic = snapshot.PaintCoatMetallic;
             project.PaintCoatRoughness = snapshot.PaintCoatRoughness;
+            project.ClearCoatAmount = snapshot.ClearCoatAmount;
+            project.ClearCoatRoughness = snapshot.ClearCoatRoughness;
+            project.AnisotropyAngleDegrees = snapshot.AnisotropyAngleDegrees;
             project.PaintColor = new Vector3(snapshot.PaintColorX, snapshot.PaintColorY, snapshot.PaintColorZ);
             project.ScratchWidthPx = snapshot.ScratchWidthPx;
             project.ScratchDepth = snapshot.ScratchDepth;
@@ -768,6 +809,8 @@ namespace KnobForge.App.Views
                 snapshot.ScratchExposeColorX,
                 snapshot.ScratchExposeColorY,
                 snapshot.ScratchExposeColorZ);
+            project.ScratchExposeMetallic = snapshot.ScratchExposeMetallic;
+            project.ScratchExposeRoughness = snapshot.ScratchExposeRoughness;
 
             project.SpiralNormalInfluenceEnabled = snapshot.SpiralNormalInfluenceEnabled;
             project.SpiralNormalLodFadeStart = snapshot.SpiralNormalLodFadeStart;
@@ -906,6 +949,9 @@ namespace KnobForge.App.Views
             public float BrushDarkness { get; set; } = 0.58f;
             public float PaintCoatMetallic { get; set; } = 0.02f;
             public float PaintCoatRoughness { get; set; } = 0.56f;
+            public float ClearCoatAmount { get; set; }
+            public float ClearCoatRoughness { get; set; } = 0.18f;
+            public float AnisotropyAngleDegrees { get; set; }
             public float PaintColorX { get; set; } = 0.85f;
             public float PaintColorY { get; set; } = 0.24f;
             public float PaintColorZ { get; set; } = 0.24f;
@@ -916,6 +962,8 @@ namespace KnobForge.App.Views
             public float ScratchExposeColorX { get; set; } = 0.88f;
             public float ScratchExposeColorY { get; set; } = 0.88f;
             public float ScratchExposeColorZ { get; set; } = 0.90f;
+            public float ScratchExposeMetallic { get; set; } = 0.92f;
+            public float ScratchExposeRoughness { get; set; } = 0.20f;
             public bool SpiralNormalInfluenceEnabled { get; set; } = true;
             public float SpiralNormalLodFadeStart { get; set; } = 4.22f;
             public float SpiralNormalLodFadeEnd { get; set; } = 4.23f;

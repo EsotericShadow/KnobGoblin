@@ -31,7 +31,7 @@
                 </Border>
 
                 <Grid ColumnDefinitions="180,*"
-                      RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                      RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
                       RowSpacing="8">
                     <TextBlock Grid.Row="0"
                                Grid.Column="0"
@@ -103,17 +103,45 @@
                     <TextBlock Grid.Row="8"
                                Grid.Column="0"
                                VerticalAlignment="Center"
-                               Text="Base Name"/>
-                    <TextBox x:Name="BaseNameTextBox"
+                               Text="Orbit Variants"/>
+                    <CheckBox x:Name="ExportOrbitVariantsCheckBox"
                              Grid.Row="8"
                              Grid.Column="1"
-                             Text="KnobA"/>
+                             VerticalAlignment="Center"
+                             Content="Also export under/over + left/right views"/>
 
                     <TextBlock Grid.Row="9"
                                Grid.Column="0"
                                VerticalAlignment="Center"
+                               Text="Orbit Yaw Offset (deg)"/>
+                    <TextBox x:Name="OrbitYawOffsetTextBox"
+                             Grid.Row="9"
+                             Grid.Column="1"
+                             Text="12"/>
+
+                    <TextBlock Grid.Row="10"
+                               Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="Orbit Pitch Offset (deg)"/>
+                    <TextBox x:Name="OrbitPitchOffsetTextBox"
+                             Grid.Row="10"
+                             Grid.Column="1"
+                             Text="8"/>
+
+                    <TextBlock Grid.Row="11"
+                               Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="Base Name"/>
+                    <TextBox x:Name="BaseNameTextBox"
+                             Grid.Row="11"
+                             Grid.Column="1"
+                             Text="KnobA"/>
+
+                    <TextBlock Grid.Row="12"
+                               Grid.Column="0"
+                               VerticalAlignment="Center"
                                Text="Output Folder"/>
-                    <Grid Grid.Row="9"
+                    <Grid Grid.Row="12"
                           Grid.Column="1"
                           ColumnDefinitions="*,Auto"
                           ColumnSpacing="8">
@@ -126,31 +154,31 @@
                                 MinWidth="86"/>
                     </Grid>
 
-                    <TextBlock Grid.Row="10"
+                    <TextBlock Grid.Row="13"
                                Grid.Column="0"
                                VerticalAlignment="Center"
                                Text="Spritesheet Layout"/>
                     <ComboBox x:Name="SpritesheetLayoutComboBox"
-                              Grid.Row="10"
+                              Grid.Row="13"
                               Grid.Column="1"/>
 
-                    <TextBlock Grid.Row="11"
+                    <TextBlock Grid.Row="14"
                                Grid.Column="0"
                                VerticalAlignment="Center"
                                Text="Export Frames"/>
                     <CheckBox x:Name="ExportFramesCheckBox"
-                              Grid.Row="11"
+                              Grid.Row="14"
                               Grid.Column="1"
                               IsChecked="True"
                               VerticalAlignment="Center"
                               Content="Save individual PNG frames"/>
 
-                    <TextBlock Grid.Row="12"
+                    <TextBlock Grid.Row="15"
                                Grid.Column="0"
                                VerticalAlignment="Center"
                                Text="Export Spritesheet"/>
                     <CheckBox x:Name="ExportSpritesheetCheckBox"
-                              Grid.Row="12"
+                              Grid.Row="15"
                               Grid.Column="1"
                               IsChecked="False"
                               VerticalAlignment="Center"

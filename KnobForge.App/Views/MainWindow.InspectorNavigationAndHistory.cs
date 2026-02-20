@@ -223,6 +223,9 @@ namespace KnobForge.App.Views
                 BrushDarkness = _project.BrushDarkness,
                 PaintCoatMetallic = _project.PaintCoatMetallic,
                 PaintCoatRoughness = _project.PaintCoatRoughness,
+                ClearCoatAmount = _project.ClearCoatAmount,
+                ClearCoatRoughness = _project.ClearCoatRoughness,
+                AnisotropyAngleDegrees = _project.AnisotropyAngleDegrees,
                 PaintColorX = _project.PaintColor.X,
                 PaintColorY = _project.PaintColor.Y,
                 PaintColorZ = _project.PaintColor.Z,
@@ -233,6 +236,8 @@ namespace KnobForge.App.Views
                 ScratchExposeColorX = _project.ScratchExposeColor.X,
                 ScratchExposeColorY = _project.ScratchExposeColor.Y,
                 ScratchExposeColorZ = _project.ScratchExposeColor.Z,
+                ScratchExposeMetallic = _project.ScratchExposeMetallic,
+                ScratchExposeRoughness = _project.ScratchExposeRoughness,
                 SpiralNormalInfluenceEnabled = _project.SpiralNormalInfluenceEnabled,
                 SpiralNormalLodFadeStart = _project.SpiralNormalLodFadeStart,
                 SpiralNormalLodFadeEnd = _project.SpiralNormalLodFadeEnd,
@@ -283,6 +288,9 @@ namespace KnobForge.App.Views
             _project.BrushDarkness = snapshot.BrushDarkness;
             _project.PaintCoatMetallic = snapshot.PaintCoatMetallic;
             _project.PaintCoatRoughness = snapshot.PaintCoatRoughness;
+            _project.ClearCoatAmount = snapshot.ClearCoatAmount;
+            _project.ClearCoatRoughness = snapshot.ClearCoatRoughness;
+            _project.AnisotropyAngleDegrees = snapshot.AnisotropyAngleDegrees;
             _project.PaintColor = new(snapshot.PaintColorX, snapshot.PaintColorY, snapshot.PaintColorZ);
             _project.ScratchWidthPx = snapshot.ScratchWidthPx;
             _project.ScratchDepth = snapshot.ScratchDepth;
@@ -292,6 +300,8 @@ namespace KnobForge.App.Views
                 snapshot.ScratchExposeColorX,
                 snapshot.ScratchExposeColorY,
                 snapshot.ScratchExposeColorZ);
+            _project.ScratchExposeMetallic = snapshot.ScratchExposeMetallic;
+            _project.ScratchExposeRoughness = snapshot.ScratchExposeRoughness;
             _project.SpiralNormalInfluenceEnabled = snapshot.SpiralNormalInfluenceEnabled;
             _project.SpiralNormalLodFadeStart = snapshot.SpiralNormalLodFadeStart;
             _project.SpiralNormalLodFadeEnd = snapshot.SpiralNormalLodFadeEnd;
@@ -677,6 +687,9 @@ namespace KnobForge.App.Views
             public float BrushDarkness { get; set; }
             public float PaintCoatMetallic { get; set; } = 0.02f;
             public float PaintCoatRoughness { get; set; } = 0.56f;
+            public float ClearCoatAmount { get; set; }
+            public float ClearCoatRoughness { get; set; } = 0.18f;
+            public float AnisotropyAngleDegrees { get; set; }
             public float PaintColorX { get; set; }
             public float PaintColorY { get; set; }
             public float PaintColorZ { get; set; }
@@ -687,6 +700,8 @@ namespace KnobForge.App.Views
             public float ScratchExposeColorX { get; set; }
             public float ScratchExposeColorY { get; set; }
             public float ScratchExposeColorZ { get; set; }
+            public float ScratchExposeMetallic { get; set; } = 0.92f;
+            public float ScratchExposeRoughness { get; set; } = 0.20f;
             public bool SpiralNormalInfluenceEnabled { get; set; }
             public float SpiralNormalLodFadeStart { get; set; }
             public float SpiralNormalLodFadeEnd { get; set; }

@@ -61,8 +61,10 @@ namespace KnobForge.App.Views
                 _brushPaintEnabledCheckBox == null || _brushPaintChannelCombo == null || _brushTypeCombo == null || _brushPaintColorPicker == null || _scratchAbrasionTypeCombo == null ||
                 _brushSizeSlider == null || _brushOpacitySlider == null || _brushDarknessSlider == null || _brushSpreadSlider == null ||
                 _paintCoatMetallicSlider == null || _paintCoatRoughnessSlider == null ||
+                _clearCoatAmountSlider == null || _clearCoatRoughnessSlider == null || _anisotropyAngleSlider == null ||
                 _scratchWidthSlider == null || _scratchDepthSlider == null || _scratchResistanceSlider == null || _scratchDepthRampSlider == null ||
                 _scratchExposeColorRSlider == null || _scratchExposeColorGSlider == null || _scratchExposeColorBSlider == null ||
+                _scratchExposeMetallicSlider == null || _scratchExposeRoughnessSlider == null ||
                 _clearPaintMaskButton == null ||
                 _renderButton == null ||
                 _rotationValueText == null || _lightXValueText == null || _lightYValueText == null ||
@@ -101,8 +103,10 @@ namespace KnobForge.App.Views
                 _shadowDiffuseInfluenceValueText == null ||
                 _brushSizeValueText == null || _brushOpacityValueText == null || _brushDarknessValueText == null || _brushSpreadValueText == null ||
                 _paintCoatMetallicValueText == null || _paintCoatRoughnessValueText == null ||
+                _clearCoatAmountValueText == null || _clearCoatRoughnessValueText == null || _anisotropyAngleValueText == null ||
                 _scratchWidthValueText == null || _scratchDepthValueText == null || _scratchResistanceValueText == null || _scratchDepthRampValueText == null ||
-                _scratchExposeColorRValueText == null || _scratchExposeColorGValueText == null || _scratchExposeColorBValueText == null)
+                _scratchExposeColorRValueText == null || _scratchExposeColorGValueText == null || _scratchExposeColorBValueText == null ||
+                _scratchExposeMetallicValueText == null || _scratchExposeRoughnessValueText == null)
             {
                 return false;
             }
@@ -330,6 +334,9 @@ namespace KnobForge.App.Views
             _brushSpreadSlider.PropertyChanged += OnPaintBrushSettingsChanged;
             _paintCoatMetallicSlider.PropertyChanged += OnPaintBrushSettingsChanged;
             _paintCoatRoughnessSlider.PropertyChanged += OnPaintBrushSettingsChanged;
+            _clearCoatAmountSlider.PropertyChanged += OnPaintBrushSettingsChanged;
+            _clearCoatRoughnessSlider.PropertyChanged += OnPaintBrushSettingsChanged;
+            _anisotropyAngleSlider.PropertyChanged += OnPaintBrushSettingsChanged;
             _scratchWidthSlider.PropertyChanged += OnPaintBrushSettingsChanged;
             _scratchDepthSlider.PropertyChanged += OnPaintBrushSettingsChanged;
             _scratchResistanceSlider.PropertyChanged += OnPaintBrushSettingsChanged;
@@ -337,6 +344,8 @@ namespace KnobForge.App.Views
             _scratchExposeColorRSlider.PropertyChanged += OnPaintBrushSettingsChanged;
             _scratchExposeColorGSlider.PropertyChanged += OnPaintBrushSettingsChanged;
             _scratchExposeColorBSlider.PropertyChanged += OnPaintBrushSettingsChanged;
+            _scratchExposeMetallicSlider.PropertyChanged += OnPaintBrushSettingsChanged;
+            _scratchExposeRoughnessSlider.PropertyChanged += OnPaintBrushSettingsChanged;
         }
 
         private void WireOpenedHandlers()
