@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
@@ -310,14 +311,17 @@ namespace KnobForge.App.Controls
 
         private void StampBrushAtPointer(Point pointerDip)
         {
+            long stampStartTimestamp = Stopwatch.GetTimestamp();
             if (_project is null || !_project.BrushPaintingEnabled)
             {
+                RecordPaintStampDiagnostics(Stopwatch.GetElapsedTime(stampStartTimestamp).TotalMilliseconds);
                 return;
             }
 
             if (!TryMapPointerToPaintUv(pointerDip, out Vector2 uv, out float referenceRadius))
             {
                 _lastPaintHitMode = PaintHitMode.Idle;
+                RecordPaintStampDiagnostics(Stopwatch.GetElapsedTime(stampStartTimestamp).TotalMilliseconds);
                 return;
             }
 
@@ -340,6 +344,7 @@ namespace KnobForge.App.Controls
                 _project.BrushSpread,
                 _project.PaintColor,
                 _paintStrokeSeed++);
+            RecordPaintStampDiagnostics(Stopwatch.GetElapsedTime(stampStartTimestamp).TotalMilliseconds);
         }
 
         private void QueuePaintStampCommand(

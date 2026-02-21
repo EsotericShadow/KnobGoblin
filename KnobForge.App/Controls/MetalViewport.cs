@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -82,6 +83,35 @@ namespace KnobForge.App.Controls
             public float LiveScratchDepth { get; }
             public bool OptionDepthRampActive { get; }
             public PaintHitMode HitMode { get; }
+        }
+
+        public readonly struct RuntimeDiagnosticsSnapshot
+        {
+            public RuntimeDiagnosticsSnapshot(
+                double cpuFrameMs,
+                double smoothedCpuFrameMs,
+                double smoothedFps,
+                double paintStampCpuMs,
+                int pendingPaintStamps,
+                PaintHitMode lastHitMode,
+                bool isPainting)
+            {
+                CpuFrameMs = cpuFrameMs;
+                SmoothedCpuFrameMs = smoothedCpuFrameMs;
+                SmoothedFps = smoothedFps;
+                PaintStampCpuMs = paintStampCpuMs;
+                PendingPaintStamps = pendingPaintStamps;
+                LastHitMode = lastHitMode;
+                IsPainting = isPainting;
+            }
+
+            public double CpuFrameMs { get; }
+            public double SmoothedCpuFrameMs { get; }
+            public double SmoothedFps { get; }
+            public double PaintStampCpuMs { get; }
+            public int PendingPaintStamps { get; }
+            public PaintHitMode LastHitMode { get; }
+            public bool IsPainting { get; }
         }
 
         public readonly struct LightGizmoSnapshot
@@ -276,6 +306,14 @@ namespace KnobForge.App.Controls
         private bool _invertKnobFrontFaceWinding = true;
         private bool _invertImportedStlFrontFaceWinding = true;
         private ContextMenu? _debugContextMenu;
+        private long _diagnosticsLastFrameStartTimestamp;
+        private double _diagnosticsLastFrameCpuMs;
+        private double _diagnosticsSmoothedFrameCpuMs = 16.67d;
+        private double _diagnosticsSmoothedFps = 60d;
+        private double _diagnosticsLastPaintStampCpuMs;
+        private long _diagnosticsLastPublishTimestamp;
+        private const double DiagnosticsSmoothingAlpha = 0.16d;
+        private const double DiagnosticsPublishMinIntervalMs = 120d;
 
         public KnobProject? Project
         {
@@ -333,9 +371,69 @@ namespace KnobForge.App.Controls
         public int ActivePaintLayerIndex => _activePaintLayerIndex;
         public int FocusedPaintLayerIndex => _focusedPaintLayerIndex;
         public event Action<PaintHudSnapshot>? PaintHudUpdated;
+        public event Action<RuntimeDiagnosticsSnapshot>? RuntimeDiagnosticsUpdated;
         public event Action? ViewportFrameRendered;
         public event Action? PaintLayersChanged;
         public event Action<int>? PaintHistoryRevisionChanged;
+
+        private static double SmoothValue(double previous, double current)
+        {
+            return previous + ((current - previous) * DiagnosticsSmoothingAlpha);
+        }
+
+        private void RecordPaintStampDiagnostics(double cpuMs)
+        {
+            _diagnosticsLastPaintStampCpuMs = cpuMs;
+            PublishRuntimeDiagnosticsSnapshot(force: false);
+        }
+
+        private void RecordFrameDiagnostics(long frameStartTimestamp, long frameEndTimestamp)
+        {
+            double frameCpuMs = Stopwatch.GetElapsedTime(frameStartTimestamp, frameEndTimestamp).TotalMilliseconds;
+            _diagnosticsLastFrameCpuMs = frameCpuMs;
+            _diagnosticsSmoothedFrameCpuMs = SmoothValue(_diagnosticsSmoothedFrameCpuMs, frameCpuMs);
+
+            if (_diagnosticsLastFrameStartTimestamp != 0)
+            {
+                double frameIntervalMs = Stopwatch.GetElapsedTime(_diagnosticsLastFrameStartTimestamp, frameStartTimestamp).TotalMilliseconds;
+                if (frameIntervalMs > 1e-4d)
+                {
+                    double fps = 1000d / frameIntervalMs;
+                    _diagnosticsSmoothedFps = SmoothValue(_diagnosticsSmoothedFps, fps);
+                }
+            }
+
+            _diagnosticsLastFrameStartTimestamp = frameStartTimestamp;
+        }
+
+        private void PublishRuntimeDiagnosticsSnapshot(bool force)
+        {
+            Action<RuntimeDiagnosticsSnapshot>? handler = RuntimeDiagnosticsUpdated;
+            if (handler == null)
+            {
+                return;
+            }
+
+            long now = Stopwatch.GetTimestamp();
+            if (!force && _diagnosticsLastPublishTimestamp != 0)
+            {
+                double elapsedMs = Stopwatch.GetElapsedTime(_diagnosticsLastPublishTimestamp, now).TotalMilliseconds;
+                if (elapsedMs < DiagnosticsPublishMinIntervalMs)
+                {
+                    return;
+                }
+            }
+
+            _diagnosticsLastPublishTimestamp = now;
+            handler(new RuntimeDiagnosticsSnapshot(
+                _diagnosticsLastFrameCpuMs,
+                _diagnosticsSmoothedFrameCpuMs,
+                _diagnosticsSmoothedFps,
+                _diagnosticsLastPaintStampCpuMs,
+                _pendingPaintStampCommands.Count,
+                _lastPaintHitMode,
+                _isPainting));
+        }
 
         public MetalViewport()
         {
@@ -466,6 +564,8 @@ namespace KnobForge.App.Controls
             {
                 return;
             }
+
+            long frameStartTimestamp = Stopwatch.GetTimestamp();
 
             IntPtr drawable = ObjC.IntPtr_objc_msgSend(_metalLayer, Selectors.NextDrawable);
             if (drawable == IntPtr.Zero)
@@ -664,6 +764,8 @@ namespace KnobForge.App.Controls
             ObjC.Void_objc_msgSend_IntPtr(commandBuffer, Selectors.PresentDrawable, drawable);
             ObjC.Void_objc_msgSend(commandBuffer, Selectors.Commit);
             _dirty = false;
+            RecordFrameDiagnostics(frameStartTimestamp, Stopwatch.GetTimestamp());
+            PublishRuntimeDiagnosticsSnapshot(force: false);
             ViewportFrameRendered?.Invoke();
         }
         public void Dispose()

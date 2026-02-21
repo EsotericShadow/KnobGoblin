@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KnobForge.Tools", "KnobForg
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KnobForge.IO", "KnobForge.IO\KnobForge.IO.csproj", "{66D09F59-C004-46F5-A088-C1EF6EE728C5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KnobForge.Regressions", "KnobForge.Regressions\KnobForge.Regressions.csproj", "{B2C8A0A9-8446-4D7E-A22C-89BCF2F80E37}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,5 +44,9 @@ Global
 		{66D09F59-C004-46F5-A088-C1EF6EE728C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{66D09F59-C004-46F5-A088-C1EF6EE728C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{66D09F59-C004-46F5-A088-C1EF6EE728C5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2C8A0A9-8446-4D7E-A22C-89BCF2F80E37}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2C8A0A9-8446-4D7E-A22C-89BCF2F80E37}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2C8A0A9-8446-4D7E-A22C-89BCF2F80E37}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2C8A0A9-8446-4D7E-A22C-89BCF2F80E37}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -118,6 +118,7 @@ namespace KnobForge.App.Views
         {
             _metalViewport.Project = _project;
             _metalViewport.InvalidateGpu();
+            _metalViewport.RuntimeDiagnosticsUpdated += OnViewportRuntimeDiagnosticsUpdated;
 
             _viewportOverlay.Focusable = true;
             _viewportOverlay.IsHitTestVisible = true;
@@ -135,6 +136,7 @@ namespace KnobForge.App.Views
             _gripStyleCombo.ItemsSource = Enum.GetValues<GripStyle>().Cast<GripStyle>().ToList();
             _gripTypeCombo.ItemsSource = Enum.GetValues<GripType>().Cast<GripType>().ToList();
             RebuildCollarPresetOptions();
+            InitializeCollarLibraryHotReload();
             _indicatorShapeCombo.ItemsSource = Enum.GetValues<IndicatorShape>().Cast<IndicatorShape>().ToList();
             _indicatorReliefCombo.ItemsSource = Enum.GetValues<IndicatorRelief>().Cast<IndicatorRelief>().ToList();
             _indicatorProfileCombo.ItemsSource = Enum.GetValues<IndicatorProfile>().Cast<IndicatorProfile>().ToList();
@@ -380,6 +382,14 @@ namespace KnobForge.App.Views
                     RefreshSceneTree();
                     RefreshInspectorFromProject(InspectorRefreshTabPolicy.FollowSceneSelection);
                 }, DispatcherPriority.Loaded);
+            };
+            Closed += (_, __) =>
+            {
+                DisposeCollarLibraryHotReload();
+                if (_metalViewport != null)
+                {
+                    _metalViewport.RuntimeDiagnosticsUpdated -= OnViewportRuntimeDiagnosticsUpdated;
+                }
             };
         }
 

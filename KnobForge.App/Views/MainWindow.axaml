@@ -101,6 +101,13 @@
                             <Button x:Name="UndoButton" Content="Undo" Width="62"/>
                             <Button x:Name="RedoButton" Content="Redo" Width="62"/>
                         </StackPanel>
+                        <TextBlock x:Name="RuntimeDiagnosticsText"
+                                   DockPanel.Dock="Right"
+                                   Margin="0,6,10,0"
+                                   VerticalAlignment="Center"
+                                   Foreground="#A9B4BF"
+                                   FontSize="11"
+                                   Text="fps -- | frame -- ms | paint -- ms"/>
                         <TextBox x:Name="InspectorSearchTextBox"
                                  Watermark="Search settings..."
                                  Height="30"
@@ -338,7 +345,25 @@
                                                     DockPanel.Dock="Right"
                                                     Margin="8,0,0,0"
                                                     MinWidth="120"/>
-                                            <ComboBox x:Name="CollarPresetCombo"/>
+                                            <ComboBox x:Name="CollarPresetCombo" MaxDropDownHeight="420" x:CompileBindings="False">
+                                                <ComboBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                                            <Border Width="34"
+                                                                    Height="34"
+                                                                    CornerRadius="4"
+                                                                    BorderBrush="#394654"
+                                                                    BorderThickness="1"
+                                                                    IsVisible="{Binding HasThumbnail}">
+                                                                <Image Source="{Binding Thumbnail}" Stretch="UniformToFill"/>
+                                                            </Border>
+                                                            <TextBlock Text="{Binding DisplayName}"
+                                                                       VerticalAlignment="Center"
+                                                                       TextWrapping="Wrap"/>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ComboBox.ItemTemplate>
+                                            </ComboBox>
                                         </DockPanel>
 
                                         <TextBlock Text="Imported Mesh Path (.glb/.stl)"/>

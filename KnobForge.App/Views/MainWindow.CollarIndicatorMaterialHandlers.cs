@@ -87,6 +87,24 @@ namespace KnobForge.App.Views
             collar.Enabled = _collarEnabledCheckBox.IsChecked ?? false;
             CollarPresetOption selectedOption = ResolveSelectedCollarPresetOption();
             _lastSelectableCollarPresetOption = selectedOption;
+            if (ReferenceEquals(sender, _collarPresetCombo) &&
+                e.Property == ComboBox.SelectedItemProperty &&
+                selectedOption.TryGetImportedMirrorDefaults(out bool defaultMirrorX, out bool defaultMirrorY, out bool defaultMirrorZ))
+            {
+                bool mirrorXChanged = (_collarMirrorXCheckBox.IsChecked ?? false) != defaultMirrorX;
+                bool mirrorYChanged = (_collarMirrorYCheckBox.IsChecked ?? false) != defaultMirrorY;
+                bool mirrorZChanged = (_collarMirrorZCheckBox.IsChecked ?? false) != defaultMirrorZ;
+                if (mirrorXChanged || mirrorYChanged || mirrorZChanged)
+                {
+                    WithUiRefreshSuppressed(() =>
+                    {
+                        _collarMirrorXCheckBox.IsChecked = defaultMirrorX;
+                        _collarMirrorYCheckBox.IsChecked = defaultMirrorY;
+                        _collarMirrorZCheckBox.IsChecked = defaultMirrorZ;
+                    });
+                }
+            }
+
             collar.Preset = selectedOption.Preset;
             string resolvedImportedMeshPath = selectedOption.ResolveImportedMeshPath(_collarMeshPathTextBox.Text);
             collar.ImportedMeshPath = resolvedImportedMeshPath;

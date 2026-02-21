@@ -43,6 +43,7 @@ namespace KnobForge.App.Views
             private readonly Button? _redoButton;
             private readonly ScrollViewer? _inspectorScrollViewer;
             private readonly TextBox? _inspectorSearchTextBox;
+            private readonly TextBlock? _runtimeDiagnosticsText;
             private readonly ListBox? _inspectorSearchResultsListBox;
             private readonly ListBox? _recentTweaksListBox;
             private readonly Button? _favoriteReferenceProfilesButton;
@@ -435,6 +436,7 @@ namespace KnobForge.App.Views
             _redoButton = this.FindControl<Button>("RedoButton");
             _inspectorScrollViewer = this.FindControl<ScrollViewer>("InspectorScrollViewer");
             _inspectorSearchTextBox = this.FindControl<TextBox>("InspectorSearchTextBox");
+            _runtimeDiagnosticsText = this.FindControl<TextBlock>("RuntimeDiagnosticsText");
             _inspectorSearchResultsListBox = this.FindControl<ListBox>("InspectorSearchResultsListBox");
             _recentTweaksListBox = this.FindControl<ListBox>("RecentTweaksListBox");
             _favoriteReferenceProfilesButton = this.FindControl<Button>("FavoriteReferenceProfilesButton");
