@@ -2,12 +2,15 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using KnobForge.Core;
+using KnobForge.Core.Scene;
 using KnobForge.App.ProjectFiles;
 using KnobForge.Rendering;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Numerics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -112,6 +115,8 @@ namespace KnobForge.App.Views
                 return false;
             }
 
+            CommitLightingEnvironmentShadowStateFromUi();
+
             string snapshotJson;
             try
             {
@@ -146,6 +151,150 @@ namespace KnobForge.App.Views
             KnobProjectFileStore.MarkRecentProject(_currentProjectFilePath);
             RefreshNativeMenuBar();
             return true;
+        }
+
+        private void CommitLightingEnvironmentShadowStateFromUi()
+        {
+            if (_lightingModeCombo?.SelectedItem is LightingMode mode)
+            {
+                _project.Mode = mode;
+            }
+
+            if (_lightListBox != null && _project.Lights.Count > 0)
+            {
+                int selected = _lightListBox.SelectedIndex;
+                if (selected >= 0)
+                {
+                    _project.SetSelectedLightIndex(Math.Clamp(selected, 0, _project.Lights.Count - 1));
+                }
+            }
+
+            KnobLight? light = _project.SelectedLight;
+            if (light != null)
+            {
+                if (_lightTypeCombo?.SelectedItem is LightType type)
+                {
+                    light.Type = type;
+                }
+
+                if (_lightXSlider != null)
+                {
+                    light.X = (float)_lightXSlider.Value;
+                }
+
+                if (_lightYSlider != null)
+                {
+                    light.Y = (float)_lightYSlider.Value;
+                }
+
+                if (_lightZSlider != null)
+                {
+                    light.Z = (float)_lightZSlider.Value;
+                }
+
+                if (_directionSlider != null)
+                {
+                    light.DirectionRadians = (float)DegreesToRadians(_directionSlider.Value);
+                }
+
+                if (_intensitySlider != null)
+                {
+                    light.Intensity = (float)_intensitySlider.Value;
+                }
+
+                if (_falloffSlider != null)
+                {
+                    light.Falloff = (float)_falloffSlider.Value;
+                }
+
+                if (_lightRSlider != null && _lightGSlider != null && _lightBSlider != null)
+                {
+                    light.Color = new SKColor(
+                        (byte)Math.Clamp((int)_lightRSlider.Value, 0, 255),
+                        (byte)Math.Clamp((int)_lightGSlider.Value, 0, 255),
+                        (byte)Math.Clamp((int)_lightBSlider.Value, 0, 255),
+                        light.Color.Alpha);
+                }
+
+                if (_diffuseBoostSlider != null)
+                {
+                    light.DiffuseBoost = (float)_diffuseBoostSlider.Value;
+                }
+
+                if (_specularBoostSlider != null)
+                {
+                    light.SpecularBoost = (float)_specularBoostSlider.Value;
+                }
+
+                if (_specularPowerSlider != null)
+                {
+                    light.SpecularPower = (float)_specularPowerSlider.Value;
+                }
+            }
+
+            if (_envIntensityInputTextBox != null && _envIntensitySlider != null)
+            {
+                ApplyPrecisionTextEntry(_envIntensityInputTextBox, _envIntensitySlider);
+            }
+
+            if (_envRoughnessMixInputTextBox != null && _envRoughnessMixSlider != null)
+            {
+                ApplyPrecisionTextEntry(_envRoughnessMixInputTextBox, _envRoughnessMixSlider);
+            }
+
+            if (_envIntensitySlider != null && _envRoughnessMixSlider != null &&
+                _envTopRSlider != null && _envTopGSlider != null && _envTopBSlider != null &&
+                _envBottomRSlider != null && _envBottomGSlider != null && _envBottomBSlider != null)
+            {
+                _project.EnvironmentIntensity = (float)_envIntensitySlider.Value;
+                _project.EnvironmentRoughnessMix = (float)_envRoughnessMixSlider.Value;
+                _project.EnvironmentTopColor = new Vector3(
+                    (float)_envTopRSlider.Value,
+                    (float)_envTopGSlider.Value,
+                    (float)_envTopBSlider.Value);
+                _project.EnvironmentBottomColor = new Vector3(
+                    (float)_envBottomRSlider.Value,
+                    (float)_envBottomGSlider.Value,
+                    (float)_envBottomBSlider.Value);
+            }
+
+            if (_shadowStrengthInputTextBox != null && _shadowStrengthSlider != null)
+            {
+                ApplyPrecisionTextEntry(_shadowStrengthInputTextBox, _shadowStrengthSlider);
+            }
+
+            if (_shadowSoftnessInputTextBox != null && _shadowSoftnessSlider != null)
+            {
+                ApplyPrecisionTextEntry(_shadowSoftnessInputTextBox, _shadowSoftnessSlider);
+            }
+
+            if (_shadowQualityInputTextBox != null && _shadowQualitySlider != null)
+            {
+                ApplyPrecisionTextEntry(_shadowQualityInputTextBox, _shadowQualitySlider);
+            }
+
+            if (_shadowEnabledCheckBox != null &&
+                _shadowSourceModeCombo != null &&
+                _shadowStrengthSlider != null &&
+                _shadowSoftnessSlider != null &&
+                _shadowDistanceSlider != null &&
+                _shadowScaleSlider != null &&
+                _shadowQualitySlider != null &&
+                _shadowGraySlider != null &&
+                _shadowDiffuseInfluenceSlider != null)
+            {
+                _project.ShadowsEnabled = _shadowEnabledCheckBox.IsChecked ?? true;
+                _project.ShadowMode = _shadowSourceModeCombo.SelectedItem is ShadowLightMode shadowMode
+                    ? shadowMode
+                    : ShadowLightMode.Weighted;
+                _project.ShadowStrength = (float)_shadowStrengthSlider.Value;
+                _project.ShadowSoftness = (float)_shadowSoftnessSlider.Value;
+                _project.ShadowDistance = (float)_shadowDistanceSlider.Value;
+                _project.ShadowScale = (float)_shadowScaleSlider.Value;
+                _project.ShadowQuality = (float)_shadowQualitySlider.Value;
+                _project.ShadowGray = (float)_shadowGraySlider.Value;
+                _project.ShadowDiffuseInfluence = (float)_shadowDiffuseInfluenceSlider.Value;
+            }
         }
 
         private string? TryBuildProjectThumbnailBase64()

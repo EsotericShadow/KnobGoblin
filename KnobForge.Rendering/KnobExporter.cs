@@ -150,10 +150,11 @@ namespace KnobForge.Rendering
                     SKColorType.Rgba8888,
                     SKAlphaType.Premul));
                 using var frameCanvas = new SKCanvas(frameBitmap);
+                SKSamplingOptions downsampleSampling = new(new SKCubicResampler(1f / 3f, 1f / 3f));
+                SKSamplingOptions directSampling = new(SKFilterMode.Linear, SKMipmapMode.None);
                 using var downsamplePaint = new SKPaint
                 {
                     BlendMode = SKBlendMode.Src,
-                    FilterQuality = SKFilterQuality.High,
                     IsAntialias = true,
                     IsDither = true
                 };
@@ -225,13 +226,23 @@ namespace KnobForge.Rendering
                                 throw new InvalidOperationException("GPU frame provider returned null frame.");
                             }
 
+                            using SKImage gpuImage = SKImage.FromBitmap(gpuFrame);
                             if (supersampleScale > 1 || gpuFrame.Width != resolution || gpuFrame.Height != resolution)
                             {
-                                frameCanvas.DrawBitmap(gpuFrame, new SKRect(0, 0, resolution, resolution), downsamplePaint);
+                                frameCanvas.DrawImage(
+                                    gpuImage,
+                                    new SKRect(0, 0, gpuFrame.Width, gpuFrame.Height),
+                                    new SKRect(0, 0, resolution, resolution),
+                                    downsampleSampling,
+                                    downsamplePaint);
                             }
                             else
                             {
-                                frameCanvas.DrawBitmap(gpuFrame, 0, 0, downsamplePaint);
+                                frameCanvas.DrawImage(
+                                    gpuImage,
+                                    new SKRect(0, 0, resolution, resolution),
+                                    directSampling,
+                                    downsamplePaint);
                             }
 
                             if (exportFrames)
@@ -331,6 +342,14 @@ namespace KnobForge.Rendering
                 throw new ArgumentOutOfRangeException(nameof(settings.SupersampleScale), $"SupersampleScale must be between 1 and {MaxSupersampleScale}.");
             }
 
+            int minimumSupersample = GetMinimumSupersampleScaleForResolution(settings.Resolution);
+            if (settings.SupersampleScale < minimumSupersample)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(settings.SupersampleScale),
+                    $"SupersampleScale {settings.SupersampleScale} is too low for {settings.Resolution}px output. Use at least {minimumSupersample} to avoid visible aliasing.");
+            }
+
             int renderResolution = checked(settings.Resolution * settings.SupersampleScale);
             if (renderResolution > MaxSpritesheetDimension)
             {
@@ -368,6 +387,21 @@ namespace KnobForge.Rendering
                 throw new ArgumentOutOfRangeException(nameof(settings.OrbitVariantPitchOffsetDeg), "OrbitVariantPitchOffsetDeg must be between 0 and 85.");
             }
 
+        }
+
+        private static int GetMinimumSupersampleScaleForResolution(int resolution)
+        {
+            if (resolution <= 128)
+            {
+                return 4;
+            }
+
+            if (resolution <= 512)
+            {
+                return 2;
+            }
+
+            return 1;
         }
 
         private SKPaint? CreateShadowPaint(ShadowConfig config)

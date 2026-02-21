@@ -139,27 +139,27 @@
                                         <ComboBox x:Name="LightTypeCombo"/>
 
                                         <TextBlock Text="X"/>
-                                        <Slider x:Name="LightXSlider" Minimum="-2000" Maximum="2000"/>
+                                        <controls:SpriteKnobSlider x:Name="LightXSlider" Minimum="-2000" Maximum="2000"/>
                                         <TextBlock x:Name="LightXValueText"/>
 
                                         <TextBlock Text="Y"/>
-                                        <Slider x:Name="LightYSlider" Minimum="-2000" Maximum="2000"/>
+                                        <controls:SpriteKnobSlider x:Name="LightYSlider" Minimum="-2000" Maximum="2000"/>
                                         <TextBlock x:Name="LightYValueText"/>
 
                                         <TextBlock Text="Z"/>
-                                        <Slider x:Name="LightZSlider" Minimum="-3000" Maximum="3000"/>
+                                        <controls:SpriteKnobSlider x:Name="LightZSlider" Minimum="-3000" Maximum="3000"/>
                                         <TextBlock x:Name="LightZValueText"/>
 
                                         <TextBlock Text="Direction"/>
-                                        <Slider x:Name="DirectionSlider" Minimum="0" Maximum="360"/>
+                                        <controls:SpriteKnobSlider x:Name="DirectionSlider" Minimum="0" Maximum="360"/>
                                         <TextBlock x:Name="DirectionValueText"/>
 
                                         <TextBlock Text="Intensity"/>
-                                        <Slider x:Name="IntensitySlider" Minimum="0" Maximum="3"/>
+                                        <controls:SpriteKnobSlider x:Name="IntensitySlider" Minimum="0" Maximum="3"/>
                                         <TextBlock x:Name="IntensityValueText"/>
 
                                         <TextBlock Text="Falloff"/>
-                                        <Slider x:Name="FalloffSlider" Minimum="0" Maximum="3"/>
+                                        <controls:SpriteKnobSlider x:Name="FalloffSlider" Minimum="0" Maximum="3"/>
                                         <TextBlock x:Name="FalloffValueText"/>
                                     </StackPanel>
                                 </Expander>
@@ -168,17 +168,17 @@
                                     <StackPanel Spacing="6" Margin="0,6,0,0">
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock Text="R" Width="14"/>
-                                            <Slider x:Name="LightRSlider" Minimum="0" Maximum="255" Width="210"/>
+                                            <controls:SpriteKnobSlider x:Name="LightRSlider" Minimum="0" Maximum="255" Width="210"/>
                                             <TextBlock x:Name="LightRValueText" Width="36"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock Text="G" Width="14"/>
-                                            <Slider x:Name="LightGSlider" Minimum="0" Maximum="255" Width="210"/>
+                                            <controls:SpriteKnobSlider x:Name="LightGSlider" Minimum="0" Maximum="255" Width="210"/>
                                             <TextBlock x:Name="LightGValueText" Width="36"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock Text="B" Width="14"/>
-                                            <Slider x:Name="LightBSlider" Minimum="0" Maximum="255" Width="210"/>
+                                            <controls:SpriteKnobSlider x:Name="LightBSlider" Minimum="0" Maximum="255" Width="210"/>
                                             <TextBlock x:Name="LightBValueText" Width="36"/>
                                         </StackPanel>
                                     </StackPanel>
@@ -187,15 +187,15 @@
                                 <Expander Header="Selected Light: Artistic" IsExpanded="False">
                                     <StackPanel Spacing="6" Margin="0,6,0,0">
                                         <TextBlock Text="Diffuse Boost"/>
-                                        <Slider x:Name="DiffuseBoostSlider" Minimum="0" Maximum="3"/>
+                                        <controls:SpriteKnobSlider x:Name="DiffuseBoostSlider" Minimum="0" Maximum="3"/>
                                         <TextBlock x:Name="DiffuseBoostValueText"/>
 
                                         <TextBlock Text="Specular Boost"/>
-                                        <Slider x:Name="SpecularBoostSlider" Minimum="0" Maximum="3"/>
+                                        <controls:SpriteKnobSlider x:Name="SpecularBoostSlider" Minimum="0" Maximum="3"/>
                                         <TextBlock x:Name="SpecularBoostValueText"/>
 
                                         <TextBlock Text="Specular Power"/>
-                                        <Slider x:Name="SpecularPowerSlider" Minimum="1" Maximum="256"/>
+                                        <controls:SpriteKnobSlider x:Name="SpecularPowerSlider" Minimum="1" Maximum="256"/>
                                         <TextBlock x:Name="SpecularPowerValueText"/>
                                     </StackPanel>
                                 </Expander>
@@ -224,7 +224,7 @@
                                 <Expander Header="Transform" IsExpanded="True">
                                     <StackPanel Spacing="6" Margin="0,6,0,0">
                                         <TextBlock Text="Rotation"/>
-                                        <Slider x:Name="RotationSlider" Minimum="0" Maximum="6.283185307179586"/>
+                                        <controls:SpriteKnobSlider x:Name="RotationSlider" Minimum="0" Maximum="6.283185307179586"/>
                                         <TextBlock x:Name="RotationValueText"/>
                                     </StackPanel>
                                 </Expander>
@@ -235,39 +235,39 @@
                                         <ComboBox x:Name="BodyStyleCombo"/>
 
                                         <TextBlock Text="Radius"/>
-                                        <Slider x:Name="ModelRadiusSlider" Minimum="40" Maximum="500"/>
+                                        <controls:SpriteKnobSlider x:Name="ModelRadiusSlider" Minimum="40" Maximum="500"/>
                                         <TextBlock x:Name="ModelRadiusValueText"/>
 
                                         <TextBlock Text="Height"/>
-                                        <Slider x:Name="ModelHeightSlider" Minimum="20" Maximum="320"/>
+                                        <controls:SpriteKnobSlider x:Name="ModelHeightSlider" Minimum="20" Maximum="320"/>
                                         <TextBlock x:Name="ModelHeightValueText"/>
 
                                         <TextBlock Text="Top Scale"/>
-                                        <Slider x:Name="ModelTopScaleSlider" Minimum="0.30" Maximum="1.30"/>
+                                        <controls:SpriteKnobSlider x:Name="ModelTopScaleSlider" Minimum="0.30" Maximum="1.30"/>
                                         <TextBlock x:Name="ModelTopScaleValueText"/>
 
                                         <TextBlock Text="Bevel"/>
-                                        <Slider x:Name="ModelBevelSlider" Minimum="0" Maximum="120"/>
+                                        <controls:SpriteKnobSlider x:Name="ModelBevelSlider" Minimum="0" Maximum="120"/>
                                         <TextBlock x:Name="ModelBevelValueText"/>
 
                                         <TextBlock Text="Bevel Curve"/>
-                                        <Slider x:Name="BevelCurveSlider" Minimum="0.4" Maximum="3"/>
+                                        <controls:SpriteKnobSlider x:Name="BevelCurveSlider" Minimum="0.4" Maximum="3"/>
                                         <TextBlock x:Name="BevelCurveValueText"/>
 
                                         <TextBlock Text="Crown Profile (Concave ↔ Convex)"/>
-                                        <Slider x:Name="CrownProfileSlider" Minimum="-1" Maximum="1"/>
+                                        <controls:SpriteKnobSlider x:Name="CrownProfileSlider" Minimum="-1" Maximum="1"/>
                                         <TextBlock x:Name="CrownProfileValueText"/>
 
                                         <TextBlock Text="Body Taper"/>
-                                        <Slider x:Name="BodyTaperSlider" Minimum="-0.35" Maximum="0.35"/>
+                                        <controls:SpriteKnobSlider x:Name="BodyTaperSlider" Minimum="-0.35" Maximum="0.35"/>
                                         <TextBlock x:Name="BodyTaperValueText"/>
 
                                         <TextBlock Text="Body Bulge"/>
-                                        <Slider x:Name="BodyBulgeSlider" Minimum="-0.35" Maximum="0.35"/>
+                                        <controls:SpriteKnobSlider x:Name="BodyBulgeSlider" Minimum="-0.35" Maximum="0.35"/>
                                         <TextBlock x:Name="BodyBulgeValueText"/>
 
                                         <TextBlock Text="Segments"/>
-                                        <Slider x:Name="ModelSegmentsSlider" Minimum="12" Maximum="180"/>
+                                        <controls:SpriteKnobSlider x:Name="ModelSegmentsSlider" Minimum="12" Maximum="180"/>
                                         <TextBlock x:Name="ModelSegmentsValueText"/>
                                     </StackPanel>
                                 </Expander>
@@ -275,15 +275,15 @@
                                 <Expander Header="Spiral Ridge (Geometry)" IsExpanded="False">
                                     <StackPanel Spacing="6" Margin="0,6,0,0">
                                         <TextBlock Text="Ridge Height"/>
-                                        <Slider x:Name="SpiralRidgeHeightSlider" Minimum="0" Maximum="24"/>
+                                        <controls:SpriteKnobSlider x:Name="SpiralRidgeHeightSlider" Minimum="0" Maximum="24"/>
                                         <TextBlock x:Name="SpiralRidgeHeightValueText"/>
 
                                         <TextBlock Text="Ridge Width"/>
-                                        <Slider x:Name="SpiralRidgeWidthSlider" Minimum="0.4" Maximum="30"/>
+                                        <controls:SpriteKnobSlider x:Name="SpiralRidgeWidthSlider" Minimum="0.4" Maximum="30"/>
                                         <TextBlock x:Name="SpiralRidgeWidthValueText"/>
 
                                         <TextBlock Text="Spiral Turns"/>
-                                        <Slider x:Name="SpiralTurnsSlider" Minimum="150" Maximum="250"/>
+                                        <controls:SpriteKnobSlider x:Name="SpiralTurnsSlider" Minimum="150" Maximum="250"/>
                                         <TextBlock x:Name="SpiralTurnsValueText"/>
                                     </StackPanel>
                                 </Expander>
@@ -297,31 +297,31 @@
                                         <ComboBox x:Name="GripTypeCombo"/>
 
                                         <TextBlock Text="Grip Start"/>
-                                        <Slider x:Name="GripStartSlider" Minimum="0" Maximum="1"/>
+                                        <controls:SpriteKnobSlider x:Name="GripStartSlider" Minimum="0" Maximum="1"/>
                                         <TextBlock x:Name="GripStartValueText"/>
 
                                         <TextBlock Text="Grip Height"/>
-                                        <Slider x:Name="GripHeightSlider" Minimum="0.05" Maximum="1"/>
+                                        <controls:SpriteKnobSlider x:Name="GripHeightSlider" Minimum="0.05" Maximum="1"/>
                                         <TextBlock x:Name="GripHeightValueText"/>
 
                                         <TextBlock Text="Knurl Density"/>
-                                        <Slider x:Name="GripDensitySlider" Minimum="4" Maximum="320"/>
+                                        <controls:SpriteKnobSlider x:Name="GripDensitySlider" Minimum="4" Maximum="320"/>
                                         <TextBlock x:Name="GripDensityValueText"/>
 
                                         <TextBlock Text="Knurl Pitch"/>
-                                        <Slider x:Name="GripPitchSlider" Minimum="0.2" Maximum="24"/>
+                                        <controls:SpriteKnobSlider x:Name="GripPitchSlider" Minimum="0.2" Maximum="24"/>
                                         <TextBlock x:Name="GripPitchValueText"/>
 
                                         <TextBlock Text="Knurl Depth"/>
-                                        <Slider x:Name="GripDepthSlider" Minimum="0" Maximum="20"/>
+                                        <controls:SpriteKnobSlider x:Name="GripDepthSlider" Minimum="0" Maximum="20"/>
                                         <TextBlock x:Name="GripDepthValueText"/>
 
                                         <TextBlock Text="Knurl Width"/>
-                                        <Slider x:Name="GripWidthSlider" Minimum="0.05" Maximum="3"/>
+                                        <controls:SpriteKnobSlider x:Name="GripWidthSlider" Minimum="0.05" Maximum="3"/>
                                         <TextBlock x:Name="GripWidthValueText"/>
 
                                         <TextBlock Text="Knurl Sharpness"/>
-                                        <Slider x:Name="GripSharpnessSlider" Minimum="0.5" Maximum="8"/>
+                                        <controls:SpriteKnobSlider x:Name="GripSharpnessSlider" Minimum="0.5" Maximum="8"/>
                                         <TextBlock x:Name="GripSharpnessValueText"/>
                                     </StackPanel>
                                 </Expander>
@@ -339,7 +339,7 @@
                                                  Watermark="/Users/.../ouroboros.glb"/>
 
                                         <TextBlock Text="Imported Scale"/>
-                                        <Slider x:Name="CollarScaleSlider" Minimum="0.05" Maximum="4"/>
+                                        <controls:SpriteKnobSlider x:Name="CollarScaleSlider" Minimum="0.05" Maximum="4"/>
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock x:Name="CollarScaleValueText" Width="88" VerticalAlignment="Center"/>
                                             <TextBox x:Name="CollarScaleInputTextBox"
@@ -348,7 +348,7 @@
                                         </StackPanel>
 
                                         <TextBlock Text="Body Length"/>
-                                        <Slider x:Name="CollarBodyLengthSlider" Minimum="0.6" Maximum="2.4"/>
+                                        <controls:SpriteKnobSlider x:Name="CollarBodyLengthSlider" Minimum="0.6" Maximum="2.4"/>
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock x:Name="CollarBodyLengthValueText" Width="88" VerticalAlignment="Center"/>
                                             <TextBox x:Name="CollarBodyLengthInputTextBox"
@@ -357,7 +357,7 @@
                                         </StackPanel>
 
                                         <TextBlock Text="Body Thickness"/>
-                                        <Slider x:Name="CollarBodyThicknessSlider" Minimum="0.5" Maximum="2.5"/>
+                                        <controls:SpriteKnobSlider x:Name="CollarBodyThicknessSlider" Minimum="0.5" Maximum="2.5"/>
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock x:Name="CollarBodyThicknessValueText" Width="88" VerticalAlignment="Center"/>
                                             <TextBox x:Name="CollarBodyThicknessInputTextBox"
@@ -366,7 +366,7 @@
                                         </StackPanel>
 
                                         <TextBlock Text="Head Length"/>
-                                        <Slider x:Name="CollarHeadLengthSlider" Minimum="0.5" Maximum="2.5"/>
+                                        <controls:SpriteKnobSlider x:Name="CollarHeadLengthSlider" Minimum="0.5" Maximum="2.5"/>
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock x:Name="CollarHeadLengthValueText" Width="88" VerticalAlignment="Center"/>
                                             <TextBox x:Name="CollarHeadLengthInputTextBox"
@@ -375,7 +375,7 @@
                                         </StackPanel>
 
                                         <TextBlock Text="Head Thickness"/>
-                                        <Slider x:Name="CollarHeadThicknessSlider" Minimum="0.5" Maximum="2.8"/>
+                                        <controls:SpriteKnobSlider x:Name="CollarHeadThicknessSlider" Minimum="0.5" Maximum="2.8"/>
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock x:Name="CollarHeadThicknessValueText" Width="88" VerticalAlignment="Center"/>
                                             <TextBox x:Name="CollarHeadThicknessInputTextBox"
@@ -384,7 +384,7 @@
                                         </StackPanel>
 
                                         <TextBlock Text="Imported Rotation"/>
-                                        <Slider x:Name="CollarRotateSlider" Minimum="-180" Maximum="180"/>
+                                        <controls:SpriteKnobSlider x:Name="CollarRotateSlider" Minimum="-180" Maximum="180"/>
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock x:Name="CollarRotateValueText" Width="88" VerticalAlignment="Center"/>
                                             <TextBox x:Name="CollarRotateInputTextBox"
@@ -393,7 +393,7 @@
                                         </StackPanel>
 
                                         <TextBlock Text="Imported Offset X"/>
-                                        <Slider x:Name="CollarOffsetXSlider" Minimum="-1.5" Maximum="1.5"/>
+                                        <controls:SpriteKnobSlider x:Name="CollarOffsetXSlider" Minimum="-1.5" Maximum="1.5"/>
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock x:Name="CollarOffsetXValueText" Width="88" VerticalAlignment="Center"/>
                                             <TextBox x:Name="CollarOffsetXInputTextBox"
@@ -402,7 +402,7 @@
                                         </StackPanel>
 
                                         <TextBlock Text="Imported Offset Y"/>
-                                        <Slider x:Name="CollarOffsetYSlider" Minimum="-1.5" Maximum="1.5"/>
+                                        <controls:SpriteKnobSlider x:Name="CollarOffsetYSlider" Minimum="-1.5" Maximum="1.5"/>
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock x:Name="CollarOffsetYValueText" Width="88" VerticalAlignment="Center"/>
                                             <TextBox x:Name="CollarOffsetYInputTextBox"
@@ -411,7 +411,7 @@
                                         </StackPanel>
 
                                         <TextBlock Text="Vertical Position (Top/Bottom)"/>
-                                        <Slider x:Name="CollarElevationSlider" Minimum="-1.5" Maximum="1.5"/>
+                                        <controls:SpriteKnobSlider x:Name="CollarElevationSlider" Minimum="-1.5" Maximum="1.5"/>
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock x:Name="CollarElevationValueText" Width="88" VerticalAlignment="Center"/>
                                             <TextBox x:Name="CollarElevationInputTextBox"
@@ -420,7 +420,7 @@
                                         </StackPanel>
 
                                         <TextBlock Text="Imported Inflate"/>
-                                        <Slider x:Name="CollarInflateSlider" Minimum="-0.2" Maximum="0.2"/>
+                                        <controls:SpriteKnobSlider x:Name="CollarInflateSlider" Minimum="-0.2" Maximum="0.2"/>
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock x:Name="CollarInflateValueText" Width="88" VerticalAlignment="Center"/>
                                             <TextBox x:Name="CollarInflateInputTextBox"
@@ -432,42 +432,42 @@
                                         <TextBlock Text="Snake Material"/>
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock Text="R" Width="14"/>
-                                            <Slider x:Name="CollarMaterialBaseRSlider" Minimum="0" Maximum="1" Width="210"/>
+                                            <controls:SpriteKnobSlider x:Name="CollarMaterialBaseRSlider" Minimum="0" Maximum="1" Width="210"/>
                                             <TextBlock x:Name="CollarMaterialBaseRValueText" Width="36"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock Text="G" Width="14"/>
-                                            <Slider x:Name="CollarMaterialBaseGSlider" Minimum="0" Maximum="1" Width="210"/>
+                                            <controls:SpriteKnobSlider x:Name="CollarMaterialBaseGSlider" Minimum="0" Maximum="1" Width="210"/>
                                             <TextBlock x:Name="CollarMaterialBaseGValueText" Width="36"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock Text="B" Width="14"/>
-                                            <Slider x:Name="CollarMaterialBaseBSlider" Minimum="0" Maximum="1" Width="210"/>
+                                            <controls:SpriteKnobSlider x:Name="CollarMaterialBaseBSlider" Minimum="0" Maximum="1" Width="210"/>
                                             <TextBlock x:Name="CollarMaterialBaseBValueText" Width="36"/>
                                         </StackPanel>
 
                                         <TextBlock Text="Snake Metallic"/>
-                                        <Slider x:Name="CollarMaterialMetallicSlider" Minimum="0" Maximum="1"/>
+                                        <controls:SpriteKnobSlider x:Name="CollarMaterialMetallicSlider" Minimum="0" Maximum="1"/>
                                         <TextBlock x:Name="CollarMaterialMetallicValueText"/>
 
                                         <TextBlock Text="Snake Roughness"/>
-                                        <Slider x:Name="CollarMaterialRoughnessSlider" Minimum="0" Maximum="1"/>
+                                        <controls:SpriteKnobSlider x:Name="CollarMaterialRoughnessSlider" Minimum="0" Maximum="1"/>
                                         <TextBlock x:Name="CollarMaterialRoughnessValueText"/>
 
                                         <TextBlock Text="Snake Pearlescence"/>
-                                        <Slider x:Name="CollarMaterialPearlescenceSlider" Minimum="0" Maximum="1"/>
+                                        <controls:SpriteKnobSlider x:Name="CollarMaterialPearlescenceSlider" Minimum="0" Maximum="1"/>
                                         <TextBlock x:Name="CollarMaterialPearlescenceValueText"/>
 
                                         <TextBlock Text="Snake Rust"/>
-                                        <Slider x:Name="CollarMaterialRustSlider" Minimum="0" Maximum="1"/>
+                                        <controls:SpriteKnobSlider x:Name="CollarMaterialRustSlider" Minimum="0" Maximum="1"/>
                                         <TextBlock x:Name="CollarMaterialRustValueText"/>
 
                                         <TextBlock Text="Snake Wear"/>
-                                        <Slider x:Name="CollarMaterialWearSlider" Minimum="0" Maximum="1"/>
+                                        <controls:SpriteKnobSlider x:Name="CollarMaterialWearSlider" Minimum="0" Maximum="1"/>
                                         <TextBlock x:Name="CollarMaterialWearValueText"/>
 
                                         <TextBlock Text="Snake Gunk"/>
-                                        <Slider x:Name="CollarMaterialGunkSlider" Minimum="0" Maximum="1"/>
+                                        <controls:SpriteKnobSlider x:Name="CollarMaterialGunkSlider" Minimum="0" Maximum="1"/>
                                         <TextBlock x:Name="CollarMaterialGunkValueText"/>
                                     </StackPanel>
                                 </Expander>
@@ -489,43 +489,43 @@
                                         <ComboBox x:Name="IndicatorProfileCombo"/>
 
                                         <TextBlock Text="Width"/>
-                                        <Slider x:Name="IndicatorWidthSlider" Minimum="0.005" Maximum="0.35"/>
+                                        <controls:SpriteKnobSlider x:Name="IndicatorWidthSlider" Minimum="0.005" Maximum="0.35"/>
                                         <TextBlock x:Name="IndicatorWidthValueText"/>
 
                                         <TextBlock Text="Length"/>
-                                        <Slider x:Name="IndicatorLengthSlider" Minimum="0.05" Maximum="0.8"/>
+                                        <controls:SpriteKnobSlider x:Name="IndicatorLengthSlider" Minimum="0.05" Maximum="0.8"/>
                                         <TextBlock x:Name="IndicatorLengthValueText"/>
 
                                         <TextBlock Text="Position"/>
-                                        <Slider x:Name="IndicatorPositionSlider" Minimum="0.05" Maximum="0.9"/>
+                                        <controls:SpriteKnobSlider x:Name="IndicatorPositionSlider" Minimum="0.05" Maximum="0.9"/>
                                         <TextBlock x:Name="IndicatorPositionValueText"/>
 
                                         <TextBlock Text="Thickness"/>
-                                        <Slider x:Name="IndicatorThicknessSlider" Minimum="0" Maximum="0.08"/>
+                                        <controls:SpriteKnobSlider x:Name="IndicatorThicknessSlider" Minimum="0" Maximum="0.08"/>
                                         <TextBlock x:Name="IndicatorThicknessValueText"/>
 
                                         <TextBlock Text="Edge Roundness"/>
-                                        <Slider x:Name="IndicatorRoundnessSlider" Minimum="0" Maximum="1"/>
+                                        <controls:SpriteKnobSlider x:Name="IndicatorRoundnessSlider" Minimum="0" Maximum="1"/>
                                         <TextBlock x:Name="IndicatorRoundnessValueText"/>
 
                                         <TextBlock Text="Color Blend"/>
-                                        <Slider x:Name="IndicatorColorBlendSlider" Minimum="0" Maximum="1"/>
+                                        <controls:SpriteKnobSlider x:Name="IndicatorColorBlendSlider" Minimum="0" Maximum="1"/>
                                         <TextBlock x:Name="IndicatorColorBlendValueText"/>
 
                                         <TextBlock Text="Indicator Color"/>
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock Text="R" Width="14"/>
-                                            <Slider x:Name="IndicatorColorRSlider" Minimum="0" Maximum="1" Width="210"/>
+                                            <controls:SpriteKnobSlider x:Name="IndicatorColorRSlider" Minimum="0" Maximum="1" Width="210"/>
                                             <TextBlock x:Name="IndicatorColorRValueText" Width="36"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock Text="G" Width="14"/>
-                                            <Slider x:Name="IndicatorColorGSlider" Minimum="0" Maximum="1" Width="210"/>
+                                            <controls:SpriteKnobSlider x:Name="IndicatorColorGSlider" Minimum="0" Maximum="1" Width="210"/>
                                             <TextBlock x:Name="IndicatorColorGValueText" Width="36"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock Text="B" Width="14"/>
-                                            <Slider x:Name="IndicatorColorBSlider" Minimum="0" Maximum="1" Width="210"/>
+                                            <controls:SpriteKnobSlider x:Name="IndicatorColorBSlider" Minimum="0" Maximum="1" Width="210"/>
                                             <TextBlock x:Name="IndicatorColorBValueText" Width="36"/>
                                         </StackPanel>
                                     </StackPanel>
@@ -539,42 +539,42 @@
                                         <TextBlock Text="Base Color"/>
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock Text="R" Width="14"/>
-                                            <Slider x:Name="MaterialBaseRSlider" Minimum="0" Maximum="1" Width="210"/>
+                                            <controls:SpriteKnobSlider x:Name="MaterialBaseRSlider" Minimum="0" Maximum="1" Width="210"/>
                                             <TextBlock x:Name="MaterialBaseRValueText" Width="36"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock Text="G" Width="14"/>
-                                            <Slider x:Name="MaterialBaseGSlider" Minimum="0" Maximum="1" Width="210"/>
+                                            <controls:SpriteKnobSlider x:Name="MaterialBaseGSlider" Minimum="0" Maximum="1" Width="210"/>
                                             <TextBlock x:Name="MaterialBaseGValueText" Width="36"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock Text="B" Width="14"/>
-                                            <Slider x:Name="MaterialBaseBSlider" Minimum="0" Maximum="1" Width="210"/>
+                                            <controls:SpriteKnobSlider x:Name="MaterialBaseBSlider" Minimum="0" Maximum="1" Width="210"/>
                                             <TextBlock x:Name="MaterialBaseBValueText" Width="36"/>
                                         </StackPanel>
 
                                         <TextBlock Text="Metallic"/>
-                                        <Slider x:Name="MaterialMetallicSlider" Minimum="0" Maximum="1"/>
+                                        <controls:SpriteKnobSlider x:Name="MaterialMetallicSlider" Minimum="0" Maximum="1"/>
                                         <TextBlock x:Name="MaterialMetallicValueText"/>
 
                                         <TextBlock Text="Roughness"/>
-                                        <Slider x:Name="MaterialRoughnessSlider" Minimum="0" Maximum="1"/>
+                                        <controls:SpriteKnobSlider x:Name="MaterialRoughnessSlider" Minimum="0" Maximum="1"/>
                                         <TextBlock x:Name="MaterialRoughnessValueText"/>
 
                                         <TextBlock Text="Pearlescence"/>
-                                        <Slider x:Name="MaterialPearlescenceSlider" Minimum="0" Maximum="1"/>
+                                        <controls:SpriteKnobSlider x:Name="MaterialPearlescenceSlider" Minimum="0" Maximum="1"/>
                                         <TextBlock x:Name="MaterialPearlescenceValueText"/>
 
                                         <TextBlock Text="Rust"/>
-                                        <Slider x:Name="MaterialRustSlider" Minimum="0" Maximum="1"/>
+                                        <controls:SpriteKnobSlider x:Name="MaterialRustSlider" Minimum="0" Maximum="1"/>
                                         <TextBlock x:Name="MaterialRustValueText"/>
 
                                         <TextBlock Text="Wear"/>
-                                        <Slider x:Name="MaterialWearSlider" Minimum="0" Maximum="1"/>
+                                        <controls:SpriteKnobSlider x:Name="MaterialWearSlider" Minimum="0" Maximum="1"/>
                                         <TextBlock x:Name="MaterialWearValueText"/>
 
                                         <TextBlock Text="Gunk"/>
-                                        <Slider x:Name="MaterialGunkSlider" Minimum="0" Maximum="1"/>
+                                        <controls:SpriteKnobSlider x:Name="MaterialGunkSlider" Minimum="0" Maximum="1"/>
                                         <TextBlock x:Name="MaterialGunkValueText"/>
                                     </StackPanel>
                                 </Expander>
@@ -582,15 +582,15 @@
                                 <Expander Header="Surface Texture" IsExpanded="False">
                                     <StackPanel Spacing="6" Margin="0,6,0,0">
                                         <TextBlock Text="Brush Strength"/>
-                                        <Slider x:Name="MaterialBrushStrengthSlider" Minimum="0" Maximum="1"/>
+                                        <controls:SpriteKnobSlider x:Name="MaterialBrushStrengthSlider" Minimum="0" Maximum="1"/>
                                         <TextBlock x:Name="MaterialBrushStrengthValueText"/>
 
                                         <TextBlock Text="Brush Density"/>
-                                        <Slider x:Name="MaterialBrushDensitySlider" Minimum="4" Maximum="320"/>
+                                        <controls:SpriteKnobSlider x:Name="MaterialBrushDensitySlider" Minimum="4" Maximum="320"/>
                                         <TextBlock x:Name="MaterialBrushDensityValueText"/>
 
                                         <TextBlock Text="Surface Character"/>
-                                        <Slider x:Name="MaterialCharacterSlider" Minimum="0" Maximum="1"/>
+                                        <controls:SpriteKnobSlider x:Name="MaterialCharacterSlider" Minimum="0" Maximum="1"/>
                                         <TextBlock x:Name="MaterialCharacterValueText"/>
                                     </StackPanel>
                                 </Expander>
@@ -604,15 +604,15 @@
                                         <ComboBox x:Name="BasisDebugModeCombo"/>
 
                                         <TextBlock Text="Normal LOD Fade Start"/>
-                                        <Slider x:Name="MicroLodFadeStartSlider" Minimum="0.1" Maximum="10"/>
+                                        <controls:SpriteKnobSlider x:Name="MicroLodFadeStartSlider" Minimum="0.1" Maximum="10"/>
                                         <TextBlock x:Name="MicroLodFadeStartValueText"/>
 
                                         <TextBlock Text="Normal LOD Fade End"/>
-                                        <Slider x:Name="MicroLodFadeEndSlider" Minimum="0.1" Maximum="12"/>
+                                        <controls:SpriteKnobSlider x:Name="MicroLodFadeEndSlider" Minimum="0.1" Maximum="12"/>
                                         <TextBlock x:Name="MicroLodFadeEndValueText"/>
 
                                         <TextBlock Text="Roughness LOD Boost"/>
-                                        <Slider x:Name="MicroRoughnessLodBoostSlider" Minimum="0" Maximum="1"/>
+                                        <controls:SpriteKnobSlider x:Name="MicroRoughnessLodBoostSlider" Minimum="0" Maximum="1"/>
                                         <TextBlock x:Name="MicroRoughnessLodBoostValueText"/>
                                     </StackPanel>
                                 </Expander>
@@ -699,7 +699,7 @@
                                             <ComboBox x:Name="BrushTypeCombo"/>
 
                                             <TextBlock Text="Brush Size (px)"/>
-                                            <Slider x:Name="BrushSizeSlider" Minimum="1" Maximum="320"/>
+                                            <controls:SpriteKnobSlider x:Name="BrushSizeSlider" Minimum="1" Maximum="320"/>
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock x:Name="BrushSizeValueText" Width="88" VerticalAlignment="Center"/>
                                                 <TextBox x:Name="BrushSizeInputTextBox"
@@ -708,7 +708,7 @@
                                             </StackPanel>
 
                                             <TextBlock Text="Brush Opacity"/>
-                                            <Slider x:Name="BrushOpacitySlider" Minimum="0" Maximum="1"/>
+                                            <controls:SpriteKnobSlider x:Name="BrushOpacitySlider" Minimum="0" Maximum="1"/>
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock x:Name="BrushOpacityValueText" Width="88" VerticalAlignment="Center"/>
                                                 <TextBox x:Name="BrushOpacityInputTextBox"
@@ -719,7 +719,7 @@
 
                                         <StackPanel x:Name="GeneralPaintAdvancedPanel" Spacing="6">
                                             <TextBlock Text="Brush Darkness"/>
-                                            <Slider x:Name="BrushDarknessSlider" Minimum="0" Maximum="1"/>
+                                            <controls:SpriteKnobSlider x:Name="BrushDarknessSlider" Minimum="0" Maximum="1"/>
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock x:Name="BrushDarknessValueText" Width="88" VerticalAlignment="Center"/>
                                                 <TextBox x:Name="BrushDarknessInputTextBox"
@@ -728,7 +728,7 @@
                                             </StackPanel>
 
                                             <TextBlock Text="Spray Random Spread"/>
-                                            <Slider x:Name="BrushSpreadSlider" Minimum="0" Maximum="1"/>
+                                            <controls:SpriteKnobSlider x:Name="BrushSpreadSlider" Minimum="0" Maximum="1"/>
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock x:Name="BrushSpreadValueText" Width="88" VerticalAlignment="Center"/>
                                                 <TextBox x:Name="BrushSpreadInputTextBox"
@@ -737,7 +737,7 @@
                                             </StackPanel>
 
                                             <TextBlock Text="Paint Coat Metallic"/>
-                                            <Slider x:Name="PaintCoatMetallicSlider" Minimum="0" Maximum="1"/>
+                                            <controls:SpriteKnobSlider x:Name="PaintCoatMetallicSlider" Minimum="0" Maximum="1"/>
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock x:Name="PaintCoatMetallicValueText" Width="88" VerticalAlignment="Center"/>
                                                 <TextBox x:Name="PaintCoatMetallicInputTextBox"
@@ -746,7 +746,7 @@
                                             </StackPanel>
 
                                             <TextBlock Text="Paint Coat Roughness"/>
-                                            <Slider x:Name="PaintCoatRoughnessSlider" Minimum="0.04" Maximum="1"/>
+                                            <controls:SpriteKnobSlider x:Name="PaintCoatRoughnessSlider" Minimum="0.04" Maximum="1"/>
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock x:Name="PaintCoatRoughnessValueText" Width="88" VerticalAlignment="Center"/>
                                                 <TextBox x:Name="PaintCoatRoughnessInputTextBox"
@@ -755,7 +755,7 @@
                                             </StackPanel>
 
                                             <TextBlock Text="Clear Coat Amount"/>
-                                            <Slider x:Name="ClearCoatAmountSlider" Minimum="0" Maximum="1"/>
+                                            <controls:SpriteKnobSlider x:Name="ClearCoatAmountSlider" Minimum="0" Maximum="1"/>
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock x:Name="ClearCoatAmountValueText" Width="88" VerticalAlignment="Center"/>
                                                 <TextBox x:Name="ClearCoatAmountInputTextBox"
@@ -764,7 +764,7 @@
                                             </StackPanel>
 
                                             <TextBlock Text="Clear Coat Roughness"/>
-                                            <Slider x:Name="ClearCoatRoughnessSlider" Minimum="0.04" Maximum="1"/>
+                                            <controls:SpriteKnobSlider x:Name="ClearCoatRoughnessSlider" Minimum="0.04" Maximum="1"/>
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock x:Name="ClearCoatRoughnessValueText" Width="88" VerticalAlignment="Center"/>
                                                 <TextBox x:Name="ClearCoatRoughnessInputTextBox"
@@ -773,7 +773,7 @@
                                             </StackPanel>
 
                                             <TextBlock Text="Anisotropy Angle (deg)"/>
-                                            <Slider x:Name="AnisotropyAngleSlider" Minimum="-180" Maximum="180"/>
+                                            <controls:SpriteKnobSlider x:Name="AnisotropyAngleSlider" Minimum="-180" Maximum="180"/>
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock x:Name="AnisotropyAngleValueText" Width="88" VerticalAlignment="Center"/>
                                                 <TextBox x:Name="AnisotropyAngleInputTextBox"
@@ -788,7 +788,7 @@
                                             <ComboBox x:Name="ScratchAbrasionTypeCombo"/>
 
                                             <TextBlock Text="Scratch Width (px)"/>
-                                            <Slider x:Name="ScratchWidthSlider" Minimum="1" Maximum="320"/>
+                                            <controls:SpriteKnobSlider x:Name="ScratchWidthSlider" Minimum="1" Maximum="320"/>
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock x:Name="ScratchWidthValueText" Width="88" VerticalAlignment="Center"/>
                                                 <TextBox x:Name="ScratchWidthInputTextBox"
@@ -797,7 +797,7 @@
                                             </StackPanel>
 
                                             <TextBlock Text="Scratch Depth"/>
-                                            <Slider x:Name="ScratchDepthSlider" Minimum="0" Maximum="1"/>
+                                            <controls:SpriteKnobSlider x:Name="ScratchDepthSlider" Minimum="0" Maximum="1"/>
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock x:Name="ScratchDepthValueText" Width="88" VerticalAlignment="Center"/>
                                                 <TextBox x:Name="ScratchDepthInputTextBox"
@@ -808,7 +808,7 @@
 
                                         <StackPanel x:Name="ScratchAdvancedPanel" Spacing="6" IsVisible="False">
                                             <TextBlock Text="Scratch Drag Resistance"/>
-                                            <Slider x:Name="ScratchResistanceSlider" Minimum="0" Maximum="0.98"/>
+                                            <controls:SpriteKnobSlider x:Name="ScratchResistanceSlider" Minimum="0" Maximum="0.98"/>
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock x:Name="ScratchResistanceValueText" Width="88" VerticalAlignment="Center"/>
                                                 <TextBox x:Name="ScratchResistanceInputTextBox"
@@ -817,7 +817,7 @@
                                             </StackPanel>
 
                                             <TextBlock Text="Option Drag Depth Ramp"/>
-                                            <Slider x:Name="ScratchDepthRampSlider" Minimum="0" Maximum="0.02"/>
+                                            <controls:SpriteKnobSlider x:Name="ScratchDepthRampSlider" Minimum="0" Maximum="0.02"/>
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock x:Name="ScratchDepthRampValueText" Width="88" VerticalAlignment="Center"/>
                                                 <TextBox x:Name="ScratchDepthRampInputTextBox"
@@ -828,7 +828,7 @@
                                             <Separator Margin="0,4,0,4"/>
                                             <TextBlock Text="Scratch Exposed Color"/>
                                             <TextBlock Text="R"/>
-                                            <Slider x:Name="ScratchExposeColorRSlider" Minimum="0" Maximum="1"/>
+                                            <controls:SpriteKnobSlider x:Name="ScratchExposeColorRSlider" Minimum="0" Maximum="1"/>
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock x:Name="ScratchExposeColorRValueText" Width="88" VerticalAlignment="Center"/>
                                                 <TextBox x:Name="ScratchExposeColorRInputTextBox"
@@ -836,7 +836,7 @@
                                                          HorizontalContentAlignment="Right"/>
                                             </StackPanel>
                                             <TextBlock Text="G"/>
-                                            <Slider x:Name="ScratchExposeColorGSlider" Minimum="0" Maximum="1"/>
+                                            <controls:SpriteKnobSlider x:Name="ScratchExposeColorGSlider" Minimum="0" Maximum="1"/>
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock x:Name="ScratchExposeColorGValueText" Width="88" VerticalAlignment="Center"/>
                                                 <TextBox x:Name="ScratchExposeColorGInputTextBox"
@@ -844,7 +844,7 @@
                                                          HorizontalContentAlignment="Right"/>
                                             </StackPanel>
                                             <TextBlock Text="B"/>
-                                            <Slider x:Name="ScratchExposeColorBSlider" Minimum="0" Maximum="1"/>
+                                            <controls:SpriteKnobSlider x:Name="ScratchExposeColorBSlider" Minimum="0" Maximum="1"/>
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock x:Name="ScratchExposeColorBValueText" Width="88" VerticalAlignment="Center"/>
                                                 <TextBox x:Name="ScratchExposeColorBInputTextBox"
@@ -853,7 +853,7 @@
                                             </StackPanel>
 
                                             <TextBlock Text="Scratch Exposed Metallic"/>
-                                            <Slider x:Name="ScratchExposeMetallicSlider" Minimum="0" Maximum="1"/>
+                                            <controls:SpriteKnobSlider x:Name="ScratchExposeMetallicSlider" Minimum="0" Maximum="1"/>
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock x:Name="ScratchExposeMetallicValueText" Width="88" VerticalAlignment="Center"/>
                                                 <TextBox x:Name="ScratchExposeMetallicInputTextBox"
@@ -862,7 +862,7 @@
                                             </StackPanel>
 
                                             <TextBlock Text="Scratch Exposed Roughness"/>
-                                            <Slider x:Name="ScratchExposeRoughnessSlider" Minimum="0.04" Maximum="1"/>
+                                            <controls:SpriteKnobSlider x:Name="ScratchExposeRoughnessSlider" Minimum="0.04" Maximum="1"/>
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock x:Name="ScratchExposeRoughnessValueText" Width="88" VerticalAlignment="Center"/>
                                                 <TextBox x:Name="ScratchExposeRoughnessInputTextBox"
@@ -896,28 +896,28 @@
                             <TextBlock Text="Environment" FontSize="18" FontWeight="SemiBold"/>
 
                             <TextBlock Text="Intensity"/>
-                            <Slider x:Name="EnvIntensitySlider" Minimum="0" Maximum="3"/>
+                            <controls:SpriteKnobSlider x:Name="EnvIntensitySlider" Minimum="0" Maximum="3"/>
                             <TextBlock x:Name="EnvIntensityValueText"/>
 
                             <TextBlock Text="Roughness Response"/>
-                            <Slider x:Name="EnvRoughnessMixSlider" Minimum="0" Maximum="1"/>
+                            <controls:SpriteKnobSlider x:Name="EnvRoughnessMixSlider" Minimum="0" Maximum="1"/>
                             <TextBlock x:Name="EnvRoughnessMixValueText"/>
 
                             <Separator/>
                             <TextBlock Text="Sky Color (Top)"/>
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <TextBlock Text="R" Width="14"/>
-                                <Slider x:Name="EnvTopRSlider" Minimum="0" Maximum="1" Width="210"/>
+                                <controls:SpriteKnobSlider x:Name="EnvTopRSlider" Minimum="0" Maximum="1" Width="210"/>
                                 <TextBlock x:Name="EnvTopRValueText" Width="36"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <TextBlock Text="G" Width="14"/>
-                                <Slider x:Name="EnvTopGSlider" Minimum="0" Maximum="1" Width="210"/>
+                                <controls:SpriteKnobSlider x:Name="EnvTopGSlider" Minimum="0" Maximum="1" Width="210"/>
                                 <TextBlock x:Name="EnvTopGValueText" Width="36"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <TextBlock Text="B" Width="14"/>
-                                <Slider x:Name="EnvTopBSlider" Minimum="0" Maximum="1" Width="210"/>
+                                <controls:SpriteKnobSlider x:Name="EnvTopBSlider" Minimum="0" Maximum="1" Width="210"/>
                                 <TextBlock x:Name="EnvTopBValueText" Width="36"/>
                             </StackPanel>
 
@@ -925,17 +925,17 @@
                             <TextBlock Text="Ground Color (Bottom)"/>
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <TextBlock Text="R" Width="14"/>
-                                <Slider x:Name="EnvBottomRSlider" Minimum="0" Maximum="1" Width="210"/>
+                                <controls:SpriteKnobSlider x:Name="EnvBottomRSlider" Minimum="0" Maximum="1" Width="210"/>
                                 <TextBlock x:Name="EnvBottomRValueText" Width="36"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <TextBlock Text="G" Width="14"/>
-                                <Slider x:Name="EnvBottomGSlider" Minimum="0" Maximum="1" Width="210"/>
+                                <controls:SpriteKnobSlider x:Name="EnvBottomGSlider" Minimum="0" Maximum="1" Width="210"/>
                                 <TextBlock x:Name="EnvBottomGValueText" Width="36"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <TextBlock Text="B" Width="14"/>
-                                <Slider x:Name="EnvBottomBSlider" Minimum="0" Maximum="1" Width="210"/>
+                                <controls:SpriteKnobSlider x:Name="EnvBottomBSlider" Minimum="0" Maximum="1" Width="210"/>
                                 <TextBlock x:Name="EnvBottomBValueText" Width="36"/>
                             </StackPanel>
                         </StackPanel>
@@ -958,11 +958,11 @@
                                 <Expander Header="Projection" IsExpanded="True">
                                     <StackPanel Spacing="6" Margin="0,6,0,0">
                                         <TextBlock Text="Distance"/>
-                                        <Slider x:Name="ShadowDistanceSlider" Minimum="0" Maximum="2.5"/>
+                                        <controls:SpriteKnobSlider x:Name="ShadowDistanceSlider" Minimum="0" Maximum="2.5"/>
                                         <TextBlock x:Name="ShadowDistanceValueText"/>
 
                                         <TextBlock Text="Scale"/>
-                                        <Slider x:Name="ShadowScaleSlider" Minimum="0.7" Maximum="1.6"/>
+                                        <controls:SpriteKnobSlider x:Name="ShadowScaleSlider" Minimum="0.7" Maximum="1.6"/>
                                         <TextBlock x:Name="ShadowScaleValueText"/>
                                     </StackPanel>
                                 </Expander>
@@ -970,11 +970,11 @@
                                 <Expander Header="Softness" IsExpanded="True">
                                     <StackPanel Spacing="6" Margin="0,6,0,0">
                                         <TextBlock Text="Softness"/>
-                                        <Slider x:Name="ShadowSoftnessSlider" Minimum="0" Maximum="1"/>
+                                        <controls:SpriteKnobSlider x:Name="ShadowSoftnessSlider" Minimum="0" Maximum="1"/>
                                         <TextBlock x:Name="ShadowSoftnessValueText"/>
 
                                         <TextBlock Text="Quality"/>
-                                        <Slider x:Name="ShadowQualitySlider" Minimum="0" Maximum="1"/>
+                                        <controls:SpriteKnobSlider x:Name="ShadowQualitySlider" Minimum="0" Maximum="1"/>
                                         <TextBlock x:Name="ShadowQualityValueText"/>
                                     </StackPanel>
                                 </Expander>
@@ -982,15 +982,15 @@
                                 <Expander Header="Appearance" IsExpanded="False">
                                     <StackPanel Spacing="6" Margin="0,6,0,0">
                                         <TextBlock Text="Strength"/>
-                                        <Slider x:Name="ShadowStrengthSlider" Minimum="0" Maximum="2.5"/>
+                                        <controls:SpriteKnobSlider x:Name="ShadowStrengthSlider" Minimum="0" Maximum="2.5"/>
                                         <TextBlock x:Name="ShadowStrengthValueText"/>
 
                                         <TextBlock Text="Shadow Gray"/>
-                                        <Slider x:Name="ShadowGraySlider" Minimum="0" Maximum="0.6"/>
+                                        <controls:SpriteKnobSlider x:Name="ShadowGraySlider" Minimum="0" Maximum="0.6"/>
                                         <TextBlock x:Name="ShadowGrayValueText"/>
 
                                         <TextBlock Text="Diffuse Influence"/>
-                                        <Slider x:Name="ShadowDiffuseInfluenceSlider" Minimum="0" Maximum="2"/>
+                                        <controls:SpriteKnobSlider x:Name="ShadowDiffuseInfluenceSlider" Minimum="0" Maximum="2"/>
                                         <TextBlock x:Name="ShadowDiffuseInfluenceValueText"/>
                                     </StackPanel>
                                 </Expander>

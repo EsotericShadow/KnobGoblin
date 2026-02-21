@@ -1,6 +1,7 @@
 <Window
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:KnobForge.App.Controls"
     x:Class="KnobForge.App.Views.RenderSettingsWindow"
     Width="560"
     Height="700"
@@ -184,6 +185,68 @@
                               VerticalAlignment="Center"
                               Content="Save spritesheet PNG"/>
                 </Grid>
+
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Left"
+                            Spacing="8">
+                    <Button x:Name="AutoCorrectButton"
+                            Content="Auto-correct Clean Settings"
+                            MinWidth="220"/>
+                </StackPanel>
+
+                <Border Background="#151B22"
+                        BorderBrush="#3A4654"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="10"
+                        Margin="0,4,0,0">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Interactive Rotary Preview (1:1)"
+                                   FontSize="13"
+                                   FontWeight="SemiBold"/>
+                        <Grid ColumnDefinitions="Auto,*"
+                              RowDefinitions="Auto,Auto"
+                              ColumnSpacing="8"
+                              RowSpacing="8">
+                            <TextBlock Grid.Row="0"
+                                       Grid.Column="0"
+                                       VerticalAlignment="Center"
+                                       Text="Perspective"/>
+                            <ComboBox x:Name="RotaryPreviewVariantComboBox"
+                                      Grid.Row="0"
+                                      Grid.Column="1"/>
+
+                            <Button x:Name="CreateRotaryPreviewButton"
+                                    Grid.Row="1"
+                                    Grid.Column="1"
+                                    HorizontalAlignment="Left"
+                                    Content="Create Rotary Preview"
+                                    MinWidth="190"/>
+                        </Grid>
+                        <TextBlock x:Name="RotaryPreviewInfoTextBlock"
+                                   TextWrapping="Wrap"
+                                   FontSize="11"
+                                   Foreground="#B9C6D3"/>
+                        <Border Background="#0F141A"
+                                BorderBrush="#2B3642"
+                                BorderThickness="1"
+                                CornerRadius="4">
+                            <StackPanel Margin="12"
+                                        HorizontalAlignment="Center"
+                                        Spacing="6">
+                                <controls:SpriteKnobSlider x:Name="RotaryPreviewKnob"
+                                                           Minimum="0"
+                                                           Maximum="1"
+                                                           KnobDiameter="128"
+                                                           IsEnabled="False"/>
+                                <TextBlock x:Name="RotaryPreviewValueTextBlock"
+                                           HorizontalAlignment="Center"
+                                           Foreground="#9FB0C2"
+                                           Text="Frame 1 / 1"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
             </StackPanel>
         </ScrollViewer>
 

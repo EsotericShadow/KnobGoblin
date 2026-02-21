@@ -23,6 +23,7 @@ namespace KnobForge.Core.Export
         JuceFilmstripRetina,
         IPlug2Filmstrip101,
         HiseFilmstrip128,
+        KnobForgeUiGrid128,
         AtlasGridMaster
     }
 
@@ -74,10 +75,10 @@ namespace KnobForge.Core.Export
             new ExportOutputStrategyDefinition(
                 ExportOutputStrategy.IPlug2Filmstrip101,
                 "iPlug2 Filmstrip 101",
-                "Standard 0..100 normalized step strip for iPlug2-style UIs: 101 x 128px horizontal filmstrip.",
+                "Standard 0..100 normalized step strip for iPlug2-style UIs: 101 x 128px horizontal filmstrip with 4x supersampled downsampling for cleaner edges.",
                 101,
                 128,
-                2,
+                4,
                 SpritesheetLayout.Horizontal,
                 0f,
                 false,
@@ -87,12 +88,25 @@ namespace KnobForge.Core.Export
             new ExportOutputStrategyDefinition(
                 ExportOutputStrategy.HiseFilmstrip128,
                 "HISE/Kontakt Filmstrip 128",
-                "Smooth 128-step filmstrip preset used in many sampler/plugin workflows: 128 x 128px horizontal strip.",
+                "Smooth 128-step filmstrip preset used in many sampler/plugin workflows: 128 x 128px horizontal strip with 4x supersampled downsampling.",
                 128,
                 128,
-                2,
+                4,
                 SpritesheetLayout.Horizontal,
                 0f,
+                false,
+                true,
+                6f,
+                ExportFilterPreset.None),
+            new ExportOutputStrategyDefinition(
+                ExportOutputStrategy.KnobForgeUiGrid128,
+                "KnobForge UI Grid 128 (13x12)",
+                "UI-ready 156-frame grid for KnobForge controls: 128px cells, 12px padding, 4x supersampled downsampling.",
+                156,
+                128,
+                4,
+                SpritesheetLayout.Grid,
+                12f,
                 false,
                 true,
                 6f,

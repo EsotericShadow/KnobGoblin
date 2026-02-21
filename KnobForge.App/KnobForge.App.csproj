@@ -27,4 +27,15 @@
     <ProjectReference Include="..\KnobForge.Tools\KnobForge.Tools.csproj" />
     <ProjectReference Include="..\KnobForge.IO\KnobForge.IO.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\green_channel_strip_over_right_spritesheet.png"
+          Link="Assets\green_channel_strip_over_right_spritesheet.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\Channel_strip_green_spritesheet.png"
+          Link="Assets\Channel_strip_green_spritesheet.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>
