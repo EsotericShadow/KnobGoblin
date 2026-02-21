@@ -598,8 +598,14 @@ fragment float4 fragment_main(
 
     float NdotV = max(0.0, dot(normal, viewDir));
     float maxBase = max(1e-6, max(baseColor.x, max(baseColor.y, baseColor.z)));
-    float3 metalSpecColor = baseColor / maxBase;
+    float3 baseHue = baseColor / maxBase;
+    // Keep a minimum metallic reflectance floor so pure-black tint does not collapse
+    // to a dead absorber with no visible light response.
+    float metalReflectance = max(0.08, maxBase);
+    float3 metalSpecColor = Clamp01(baseHue * metalReflectance);
     float3 F0 = mix(float3(0.04), metalSpecColor, metallic);
+    float metallicSpecFloor = mix(0.04, 0.08, metallic);
+    F0 = max(F0, float3(metallicSpecFloor));
     float3 fresnelView = F0 + (float3(1.0) - F0) * pow(1.0 - NdotV, 5.0);
     float clearCoatF0 = 0.04;
     float clearCoatAlpha = max(0.02, clearCoatRoughness * clearCoatRoughness);

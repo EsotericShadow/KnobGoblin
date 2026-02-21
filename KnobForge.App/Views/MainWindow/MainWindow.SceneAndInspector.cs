@@ -778,6 +778,7 @@ namespace KnobForge.App.Views
                 }
 
                 ApplyInspectorTabPolicy(tabPolicy, preservedTab);
+                UpdateNodeInspectorForSelection(_project.SelectedNode);
                 RestoreInspectorPresentationStateForCurrentTab();
                 RestoreInspectorFocusStateForCurrentTab(preservedFocus);
                 UpdateReadouts();

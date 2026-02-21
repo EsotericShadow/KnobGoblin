@@ -8,39 +8,103 @@
     Width="1220"
     Height="760"
     Title="KnobForge">
-    <Grid RowDefinitions="Auto,*">
+    <Grid RowDefinitions="Auto,Auto,*">
         <Border Grid.Row="0"
                 Background="#12161A"
                 BorderBrush="#2A3138"
                 BorderThickness="0,0,0,1"
                 Padding="10,8">
-            <DockPanel LastChildFill="False">
-                <TextBlock DockPanel.Dock="Left"
-                           VerticalAlignment="Center"
-                           Text="KnobForge"
-                           FontSize="14"
-                           FontWeight="SemiBold"
-                           Foreground="#E6EEF5"/>
-                <StackPanel DockPanel.Dock="Right"
+            <Grid ColumnDefinitions="Auto,*,Auto"
+                  VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal"
+                            Spacing="10"
+                            VerticalAlignment="Center">
+                    <Border Background="#0F1317"
+                            BorderBrush="#2E3740"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="8,4">
+                        <TextBlock VerticalAlignment="Center"
+                                   Text="KnobForge"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Foreground="#E6EEF5"/>
+                    </Border>
+                    <TextBlock x:Name="TopProjectStatusText"
+                               VerticalAlignment="Center"
+                               Text="Project: Untitled"
+                               FontSize="12"
+                               Foreground="#A9B4BF"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
-                            Spacing="8">
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                    <Button x:Name="NewProjectButton"
+                            Content="New"
+                            MinWidth="68"
+                            ToolTip.Tip="Open a new KnobForge window"/>
                     <Button x:Name="OpenProjectButton"
                             Content="Open..."
-                            MinWidth="82"/>
+                            MinWidth="82"
+                            ToolTip.Tip="Open an existing .knob project"/>
                     <Button x:Name="SaveProjectButton"
                             Content="Save"
-                            MinWidth="74"/>
+                            MinWidth="74"
+                            ToolTip.Tip="Save current project"/>
                     <Button x:Name="SaveProjectAsButton"
                             Content="Save As..."
-                            MinWidth="94"/>
+                            MinWidth="94"
+                            ToolTip.Tip="Save current project to a new file"/>
                     <Button x:Name="RenderButton"
                             Content="Render..."
-                            MinWidth="96"/>
+                            MinWidth="96"
+                            ToolTip.Tip="Open spritesheet render window"/>
                 </StackPanel>
-            </DockPanel>
+            </Grid>
         </Border>
 
-        <Grid Grid.Row="1" ColumnDefinitions="240,*,360">
+        <Border Grid.Row="1"
+                Background="#101419"
+                BorderBrush="#2A3138"
+                BorderThickness="0,0,0,1"
+                Padding="10,6">
+            <Grid ColumnDefinitions="Auto,Auto,*"
+                  ColumnSpacing="8"
+                  VerticalAlignment="Center">
+                <Border Background="#151B22"
+                        BorderBrush="#2C3845"
+                        BorderThickness="1"
+                        CornerRadius="5"
+                        Padding="8,4">
+                    <TextBlock x:Name="ContextStripNodeText"
+                               Text="Node: Model"
+                               FontSize="11"
+                               Foreground="#D6E0EA"/>
+                </Border>
+                <Border Grid.Column="1"
+                        Background="#151B22"
+                        BorderBrush="#2C3845"
+                        BorderThickness="1"
+                        CornerRadius="5"
+                        Padding="8,4">
+                    <TextBlock x:Name="ContextStripToolText"
+                               Text="Tool: View"
+                               FontSize="11"
+                               Foreground="#D6E0EA"/>
+                </Border>
+                <TextBlock x:Name="ContextStripHintText"
+                           Grid.Column="2"
+                           VerticalAlignment="Center"
+                           Text="Tip: Select a node to focus inspector controls."
+                           FontSize="11"
+                           Foreground="#A5B2BF"
+                           TextTrimming="CharacterEllipsis"/>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2" ColumnDefinitions="240,*,360">
             <Border Grid.Column="0"
                     Background="#111417"
                     BorderBrush="#2A3138"
@@ -87,6 +151,201 @@
                             IsHitTestVisible="True"
                             Focusable="True"
                             Background="Transparent"/>
+                    <Border x:Name="ViewportBrushDock"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Bottom"
+                            Margin="12"
+                            Background="#131920"
+                            BorderBrush="#304052"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="8"
+                            IsVisible="False">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Brush Transport"
+                                       FontSize="10"
+                                       FontWeight="SemiBold"
+                                       Foreground="#BFD0E0"/>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <Button x:Name="BrushQuickToggleButton"
+                                        Width="30"
+                                        Height="30"
+                                        ToolTip.Tip="Toggle brush painting">
+                                    <Viewbox Width="14" Height="14">
+                                        <Canvas Width="16" Height="16">
+                                            <Path Data="M2,12 L4,14 L9,9 L7,7 Z M7,7 L11,3 L13,5 L9,9 Z"
+                                                  Fill="#DCE7F2"/>
+                                        </Canvas>
+                                    </Viewbox>
+                                </Button>
+                                <Button x:Name="BrushQuickColorButton"
+                                        Width="30"
+                                        Height="30"
+                                        ToolTip.Tip="Color channel">
+                                    <Viewbox Width="14" Height="14">
+                                        <Canvas Width="16" Height="16">
+                                            <Path Data="M8,1 C8,1 3,6 3,9 A5,5 0 1 0 13,9 C13,6 8,1 8,1 Z"
+                                                  Fill="#DCE7F2"/>
+                                        </Canvas>
+                                    </Viewbox>
+                                </Button>
+                                <Button x:Name="BrushQuickScratchButton"
+                                        Width="30"
+                                        Height="30"
+                                        ToolTip.Tip="Scratch channel">
+                                    <Viewbox Width="14" Height="14">
+                                        <Canvas Width="16" Height="16">
+                                            <Path Data="M1,12 L6,7 L9,10 L15,4 L15,6 L9,12 L6,9 L2,13 Z"
+                                                  Fill="#DCE7F2"/>
+                                        </Canvas>
+                                    </Viewbox>
+                                </Button>
+                                <Button x:Name="BrushQuickEraseButton"
+                                        Width="30"
+                                        Height="30"
+                                        ToolTip.Tip="Erase channel">
+                                    <Viewbox Width="14" Height="14">
+                                        <Canvas Width="16" Height="16">
+                                            <Path Data="M3,9 L8,4 L13,9 L8,14 Z"
+                                                  Fill="#DCE7F2"/>
+                                            <Path Data="M5,11 L8,8 L11,11 L8,14 Z"
+                                                  Fill="#131920"/>
+                                        </Canvas>
+                                    </Viewbox>
+                                </Button>
+                                <Button x:Name="BrushQuickRustButton"
+                                        Width="30"
+                                        Height="30"
+                                        ToolTip.Tip="Rust channel">
+                                    <Viewbox Width="14" Height="14">
+                                        <Canvas Width="16" Height="16">
+                                            <Ellipse Width="12" Height="12" Canvas.Left="2" Canvas.Top="2"
+                                                     Stroke="#DCE7F2" StrokeThickness="1.5"/>
+                                            <Ellipse Width="2.5" Height="2.5" Canvas.Left="5" Canvas.Top="5"
+                                                     Fill="#DCE7F2"/>
+                                            <Ellipse Width="2" Height="2" Canvas.Left="9" Canvas.Top="8"
+                                                     Fill="#DCE7F2"/>
+                                            <Ellipse Width="1.8" Height="1.8" Canvas.Left="6.5" Canvas.Top="9.5"
+                                                     Fill="#DCE7F2"/>
+                                        </Canvas>
+                                    </Viewbox>
+                                </Button>
+                                <Button x:Name="BrushQuickWearButton"
+                                        Width="30"
+                                        Height="30"
+                                        ToolTip.Tip="Wear channel">
+                                    <Viewbox Width="14" Height="14">
+                                        <Canvas Width="16" Height="16">
+                                            <Path Data="M8,1 A7,7 0 1 1 8,15 A4,4 0 1 0 8,1 Z"
+                                                  Fill="#DCE7F2"/>
+                                        </Canvas>
+                                    </Viewbox>
+                                </Button>
+                                <Button x:Name="BrushQuickGunkButton"
+                                        Width="30"
+                                        Height="30"
+                                        ToolTip.Tip="Gunk channel">
+                                    <Viewbox Width="14" Height="14">
+                                        <Canvas Width="16" Height="16">
+                                            <Path Data="M3,10 C2,7 4,3 8,3 C11,3 14,5 13,9 C13,12 10,14 7,13 C5,13 3,12 3,10 Z"
+                                                  Fill="#DCE7F2"/>
+                                        </Canvas>
+                                    </Viewbox>
+                                </Button>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <Button x:Name="BrushQuickSprayButton"
+                                        Width="36"
+                                        Height="28"
+                                        ToolTip.Tip="Spray brush">
+                                    <Viewbox Width="16" Height="12">
+                                        <Canvas Width="18" Height="12">
+                                            <Rectangle Width="7" Height="3" Canvas.Left="1" Canvas.Top="7" Fill="#DCE7F2"/>
+                                            <Path Data="M8,8 L12,4 L13,5 L9,9 Z" Fill="#DCE7F2"/>
+                                            <Ellipse Width="1.4" Height="1.4" Canvas.Left="13" Canvas.Top="1" Fill="#DCE7F2"/>
+                                            <Ellipse Width="1.4" Height="1.4" Canvas.Left="15" Canvas.Top="3" Fill="#DCE7F2"/>
+                                            <Ellipse Width="1.4" Height="1.4" Canvas.Left="16" Canvas.Top="1.5" Fill="#DCE7F2"/>
+                                        </Canvas>
+                                    </Viewbox>
+                                </Button>
+                                <Button x:Name="BrushQuickStrokeButton"
+                                        Width="36"
+                                        Height="28"
+                                        ToolTip.Tip="Stroke brush">
+                                    <Viewbox Width="16" Height="12">
+                                        <Canvas Width="18" Height="12">
+                                            <Path Data="M2,10 C5,2 12,2 16,9"
+                                                  Stroke="#DCE7F2"
+                                                  StrokeThickness="2"
+                                                  StrokeLineCap="Round"/>
+                                        </Canvas>
+                                    </Viewbox>
+                                </Button>
+                                <Button x:Name="BrushQuickNeedleButton"
+                                        Width="30"
+                                        Height="28"
+                                        ToolTip.Tip="Needle abrasion">
+                                    <Viewbox Width="14" Height="12">
+                                        <Canvas Width="16" Height="12">
+                                            <Rectangle Width="1.4" Height="8" Canvas.Left="7.3" Canvas.Top="1.5" Fill="#DCE7F2"/>
+                                            <Path Data="M8,10 L5.8,8.4 L10.2,8.4 Z" Fill="#DCE7F2"/>
+                                        </Canvas>
+                                    </Viewbox>
+                                </Button>
+                                <Button x:Name="BrushQuickScuffButton"
+                                        Width="34"
+                                        Height="28"
+                                        ToolTip.Tip="Scuff abrasion">
+                                    <Viewbox Width="14" Height="12">
+                                        <Canvas Width="16" Height="12">
+                                            <Path Data="M2,10 L6,6"
+                                                  Stroke="#DCE7F2"
+                                                  StrokeThickness="1.6"
+                                                  StrokeLineCap="Round"/>
+                                            <Path Data="M6,10 L10,6"
+                                                  Stroke="#DCE7F2"
+                                                  StrokeThickness="1.6"
+                                                  StrokeLineCap="Round"/>
+                                            <Path Data="M10,10 L14,6"
+                                                  Stroke="#DCE7F2"
+                                                  StrokeThickness="1.6"
+                                                  StrokeLineCap="Round"/>
+                                        </Canvas>
+                                    </Viewbox>
+                                </Button>
+                                <Button x:Name="BrushQuickAddLayerButton"
+                                        Width="34"
+                                        Height="28"
+                                        ToolTip.Tip="Add paint layer">
+                                    <Viewbox Width="14" Height="12">
+                                        <Canvas Width="16" Height="12">
+                                            <Rectangle Width="8" Height="4" Canvas.Left="2" Canvas.Top="6"
+                                                       Stroke="#DCE7F2" StrokeThickness="1.2"/>
+                                            <Rectangle Width="8" Height="4" Canvas.Left="4" Canvas.Top="2"
+                                                       Stroke="#DCE7F2" StrokeThickness="1.2"/>
+                                            <Path Data="M13,1 L13,5 M11,3 L15,3"
+                                                  Stroke="#DCE7F2"
+                                                  StrokeThickness="1.2"
+                                                  StrokeLineCap="Round"/>
+                                        </Canvas>
+                                    </Viewbox>
+                                </Button>
+                                <Button x:Name="BrushQuickClearMaskButton"
+                                        Width="36"
+                                        Height="28"
+                                        ToolTip.Tip="Clear paint mask">
+                                    <Viewbox Width="14" Height="12">
+                                        <Canvas Width="16" Height="12">
+                                            <Path Data="M2,2 L14,10 M14,2 L2,10"
+                                                  Stroke="#DCE7F2"
+                                                  StrokeThickness="1.8"
+                                                  StrokeLineCap="Round"/>
+                                        </Canvas>
+                                    </Viewbox>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
                 </Grid>
             </Border>
 
@@ -214,8 +473,12 @@
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Spacing="10" Margin="4">
                                 <TextBlock Text="Model" FontSize="18" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="NodeInspectorContextText"
+                                           Text="Selected: Model"
+                                           FontSize="11"
+                                           Foreground="#A9B4BF"/>
 
-                                <Expander Header="Reference Profiles" IsExpanded="False">
+                                <Expander x:Name="NodeReferenceProfilesExpander" Header="Reference Profiles" IsExpanded="False">
                                     <StackPanel Spacing="6" Margin="0,6,0,0">
                                         <TextBlock Text="Reference Knob Style"/>
                                         <ComboBox x:Name="ReferenceStyleCombo"/>
@@ -228,7 +491,7 @@
                                     </StackPanel>
                                 </Expander>
 
-                                <Expander Header="Transform" IsExpanded="True">
+                                <Expander x:Name="NodeTransformExpander" Header="Transform" IsExpanded="True">
                                     <StackPanel Spacing="6" Margin="0,6,0,0">
                                         <TextBlock Text="Rotation"/>
                                         <controls:SpriteKnobSlider x:Name="RotationSlider" Minimum="0" Maximum="6.283185307179586"/>
@@ -236,7 +499,7 @@
                                     </StackPanel>
                                 </Expander>
 
-                                <Expander Header="Body Shape" IsExpanded="True">
+                                <Expander x:Name="NodeBodyShapeExpander" Header="Body Shape" IsExpanded="True">
                                     <StackPanel Spacing="6" Margin="0,6,0,0">
                                         <TextBlock Text="Body Style"/>
                                         <ComboBox x:Name="BodyStyleCombo"/>
@@ -279,7 +542,7 @@
                                     </StackPanel>
                                 </Expander>
 
-                                <Expander Header="Spiral Ridge (Geometry)" IsExpanded="False">
+                                <Expander x:Name="NodeSpiralRidgeExpander" Header="Spiral Ridge (Geometry)" IsExpanded="False">
                                     <StackPanel Spacing="6" Margin="0,6,0,0">
                                         <TextBlock Text="Ridge Height"/>
                                         <controls:SpriteKnobSlider x:Name="SpiralRidgeHeightSlider" Minimum="0" Maximum="24"/>
@@ -295,7 +558,7 @@
                                     </StackPanel>
                                 </Expander>
 
-                                <Expander Header="Grip" IsExpanded="True">
+                                <Expander x:Name="NodeGripExpander" Header="Grip" IsExpanded="True">
                                     <StackPanel Spacing="6" Margin="0,6,0,0">
                                         <TextBlock Text="Grip Style"/>
                                         <ComboBox x:Name="GripStyleCombo"/>
@@ -333,7 +596,7 @@
                                     </StackPanel>
                                 </Expander>
 
-                                <Expander Header="Collar" IsExpanded="True">
+                                <Expander x:Name="NodeCollarExpander" Header="Collar" IsExpanded="True">
                                     <StackPanel Spacing="6" Margin="0,6,0,0">
                                         <CheckBox x:Name="CollarEnabledCheckBox"
                                                   Content="Enable Collar"/>
@@ -519,7 +782,7 @@
                                     </StackPanel>
                                 </Expander>
 
-                                <Expander Header="Indicator" IsExpanded="True">
+                                <Expander x:Name="NodeIndicatorExpander" Header="Indicator" IsExpanded="True">
                                     <StackPanel Spacing="6" Margin="0,6,0,0">
                                         <CheckBox x:Name="IndicatorEnabledCheckBox"
                                                   Content="Enable Indicator"/>
@@ -578,7 +841,7 @@
                                     </StackPanel>
                                 </Expander>
 
-                                <Expander Header="Material" IsExpanded="True">
+                                <Expander x:Name="NodeMaterialExpander" Header="Material" IsExpanded="True">
                                     <StackPanel Spacing="6" Margin="0,6,0,0">
                                         <TextBlock Text="Material Region"/>
                                         <ComboBox x:Name="MaterialRegionCombo"/>
@@ -626,7 +889,7 @@
                                     </StackPanel>
                                 </Expander>
 
-                                <Expander Header="Surface Texture" IsExpanded="False">
+                                <Expander x:Name="NodeSurfaceTextureExpander" Header="Surface Texture" IsExpanded="False">
                                     <StackPanel Spacing="6" Margin="0,6,0,0">
                                         <TextBlock Text="Brush Strength"/>
                                         <controls:SpriteKnobSlider x:Name="MaterialBrushStrengthSlider" Minimum="0" Maximum="1"/>
@@ -642,7 +905,7 @@
                                     </StackPanel>
                                 </Expander>
 
-                                <Expander Header="Micro Detail LOD (Debug)" IsExpanded="False">
+                                <Expander x:Name="NodeMicroDetailExpander" Header="Micro Detail LOD (Debug)" IsExpanded="False">
                                     <StackPanel Spacing="6" Margin="0,6,0,0">
                                         <CheckBox x:Name="SpiralNormalInfluenceCheckBox"
                                                   Content="Enable Spiral Normal Influence"/>

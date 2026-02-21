@@ -467,6 +467,10 @@ namespace KnobForge.App.Views
                 ? "Untitled"
                 : Path.GetFileNameWithoutExtension(_currentProjectFilePath);
             Title = $"KnobForge - {suffix}";
+            if (_topProjectStatusText != null)
+            {
+                _topProjectStatusText.Text = $"Project: {suffix}";
+            }
         }
 
         private async Task ShowProjectFileInfoDialogAsync(string title, string message)

@@ -182,6 +182,11 @@ namespace KnobForge.App.Views
             _removeLightButton.Click += (_, _) => RemoveSelectedLight();
             _centerLightButton.Click += (_, _) => CenterLight();
             _saveReferenceProfileButton.Click += OnSaveReferenceProfileClicked;
+            if (_newProjectButton != null)
+            {
+                _newProjectButton.Click += (_, _) => OpenNewProjectWindowFromMenu();
+            }
+
             if (_openProjectButton != null)
             {
                 _openProjectButton.Click += OnOpenProjectButtonClicked;
@@ -229,6 +234,8 @@ namespace KnobForge.App.Views
             {
                 _redoButton.Click += (_, _) => ExecuteRedo();
             }
+
+            WireBrushQuickToolbarButtons();
         }
 
         private void WireControlPropertyHandlers()

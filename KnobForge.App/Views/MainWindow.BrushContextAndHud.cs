@@ -94,6 +94,8 @@ namespace KnobForge.App.Views
             {
                 _brushAdvancedExpander.IsExpanded = true;
             }
+
+            UpdateBrushQuickToolbarState();
         }
 
         private void OnViewportPaintHudUpdated(MetalViewport.PaintHudSnapshot snapshot)
