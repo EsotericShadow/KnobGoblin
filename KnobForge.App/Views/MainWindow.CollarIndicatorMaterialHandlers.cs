@@ -23,6 +23,9 @@ namespace KnobForge.App.Views
                 _collarHeadLengthSlider == null ||
                 _collarHeadThicknessSlider == null ||
                 _collarRotateSlider == null ||
+                _collarMirrorXCheckBox == null ||
+                _collarMirrorYCheckBox == null ||
+                _collarMirrorZCheckBox == null ||
                 _collarOffsetXSlider == null ||
                 _collarOffsetYSlider == null ||
                 _collarElevationSlider == null ||
@@ -32,7 +35,10 @@ namespace KnobForge.App.Views
             }
 
             bool sliderChange = false;
-            if (ReferenceEquals(sender, _collarEnabledCheckBox))
+            if (ReferenceEquals(sender, _collarEnabledCheckBox) ||
+                ReferenceEquals(sender, _collarMirrorXCheckBox) ||
+                ReferenceEquals(sender, _collarMirrorYCheckBox) ||
+                ReferenceEquals(sender, _collarMirrorZCheckBox))
             {
                 if (e.Property != ToggleButton.IsCheckedProperty)
                 {
@@ -43,6 +49,16 @@ namespace KnobForge.App.Views
             {
                 if (e.Property != ComboBox.SelectedItemProperty)
                 {
+                    return;
+                }
+
+                if (_collarPresetCombo.SelectedItem is CollarPresetOption candidate && !candidate.IsSelectable)
+                {
+                    CollarPresetOption fallback = ResolveSelectedCollarPresetOption();
+                    WithUiRefreshSuppressed(() =>
+                    {
+                        _collarPresetCombo.SelectedItem = fallback;
+                    });
                     return;
                 }
             }
@@ -69,21 +85,33 @@ namespace KnobForge.App.Views
 
             CollarNode collar = EnsureCollarNode();
             collar.Enabled = _collarEnabledCheckBox.IsChecked ?? false;
-            CollarPreset selectedPreset = _collarPresetCombo.SelectedItem is CollarPreset preset
-                ? preset
-                : CollarPreset.None;
-            collar.Preset = selectedPreset;
-            collar.ImportedMeshPath = CollarNode.ResolveImportedMeshPath(selectedPreset, _collarMeshPathTextBox.Text);
+            CollarPresetOption selectedOption = ResolveSelectedCollarPresetOption();
+            _lastSelectableCollarPresetOption = selectedOption;
+            collar.Preset = selectedOption.Preset;
+            string resolvedImportedMeshPath = selectedOption.ResolveImportedMeshPath(_collarMeshPathTextBox.Text);
+            collar.ImportedMeshPath = resolvedImportedMeshPath;
             collar.ImportedScale = (float)_collarScaleSlider.Value;
             collar.ImportedBodyLengthScale = (float)_collarBodyLengthSlider.Value;
             collar.ImportedBodyThicknessScale = (float)_collarBodyThicknessSlider.Value;
             collar.ImportedHeadLengthScale = (float)_collarHeadLengthSlider.Value;
             collar.ImportedHeadThicknessScale = (float)_collarHeadThicknessSlider.Value;
             collar.ImportedRotationRadians = (float)DegreesToRadians(_collarRotateSlider.Value);
+            collar.ImportedMirrorX = _collarMirrorXCheckBox.IsChecked ?? false;
+            collar.ImportedMirrorY = _collarMirrorYCheckBox.IsChecked ?? false;
+            collar.ImportedMirrorZ = _collarMirrorZCheckBox.IsChecked ?? false;
             collar.ImportedOffsetXRatio = (float)_collarOffsetXSlider.Value;
             collar.ImportedOffsetYRatio = (float)_collarOffsetYSlider.Value;
             collar.ElevationRatio = (float)_collarElevationSlider.Value;
             collar.ImportedInflateRatio = (float)_collarInflateSlider.Value;
+
+            if (e.Property == ComboBox.SelectedItemProperty &&
+                !string.Equals(_collarMeshPathTextBox.Text, resolvedImportedMeshPath, StringComparison.Ordinal))
+            {
+                WithUiRefreshSuppressed(() =>
+                {
+                    _collarMeshPathTextBox.Text = resolvedImportedMeshPath;
+                });
+            }
 
             if (sliderChange)
             {

@@ -38,7 +38,8 @@ namespace KnobForge.App.Views
                 _collarEnabledCheckBox == null || _collarPresetCombo == null || _collarMeshPathTextBox == null ||
                 _collarScaleSlider == null || _collarBodyLengthSlider == null || _collarBodyThicknessSlider == null ||
                 _collarHeadLengthSlider == null || _collarHeadThicknessSlider == null ||
-                _collarRotateSlider == null || _collarOffsetXSlider == null || _collarOffsetYSlider == null || _collarElevationSlider == null || _collarInflateSlider == null ||
+                _collarRotateSlider == null || _collarMirrorXCheckBox == null || _collarMirrorYCheckBox == null || _collarMirrorZCheckBox == null ||
+                _collarOffsetXSlider == null || _collarOffsetYSlider == null || _collarElevationSlider == null || _collarInflateSlider == null ||
                 _collarMaterialBaseRSlider == null || _collarMaterialBaseGSlider == null || _collarMaterialBaseBSlider == null ||
                 _collarMaterialMetallicSlider == null || _collarMaterialRoughnessSlider == null || _collarMaterialPearlescenceSlider == null ||
                 _collarMaterialRustSlider == null || _collarMaterialWearSlider == null || _collarMaterialGunkSlider == null ||
@@ -133,7 +134,7 @@ namespace KnobForge.App.Views
             _bodyStyleCombo.ItemsSource = Enum.GetValues<BodyStyle>().Cast<BodyStyle>().ToList();
             _gripStyleCombo.ItemsSource = Enum.GetValues<GripStyle>().Cast<GripStyle>().ToList();
             _gripTypeCombo.ItemsSource = Enum.GetValues<GripType>().Cast<GripType>().ToList();
-            _collarPresetCombo.ItemsSource = Enum.GetValues<CollarPreset>().Cast<CollarPreset>().ToList();
+            RebuildCollarPresetOptions();
             _indicatorShapeCombo.ItemsSource = Enum.GetValues<IndicatorShape>().Cast<IndicatorShape>().ToList();
             _indicatorReliefCombo.ItemsSource = Enum.GetValues<IndicatorRelief>().Cast<IndicatorRelief>().ToList();
             _indicatorProfileCombo.ItemsSource = Enum.GetValues<IndicatorProfile>().Cast<IndicatorProfile>().ToList();
@@ -210,6 +211,10 @@ namespace KnobForge.App.Views
             {
                 _deleteReferenceProfileButton.Click += OnDeleteReferenceProfileClicked;
             }
+            if (_refreshCollarLibraryButton != null)
+            {
+                _refreshCollarLibraryButton.Click += OnRefreshCollarLibraryButtonClicked;
+            }
             _resetViewButton.Click += (_, _) => _metalViewport?.ResetCamera();
             _clearPaintMaskButton.Click += (_, _) => OnClearPaintMask();
             _renderButton.Click += OnRenderButtonClick;
@@ -273,6 +278,9 @@ namespace KnobForge.App.Views
             _collarHeadLengthSlider.PropertyChanged += OnCollarSettingsChanged;
             _collarHeadThicknessSlider.PropertyChanged += OnCollarSettingsChanged;
             _collarRotateSlider.PropertyChanged += OnCollarSettingsChanged;
+            _collarMirrorXCheckBox.PropertyChanged += OnCollarSettingsChanged;
+            _collarMirrorYCheckBox.PropertyChanged += OnCollarSettingsChanged;
+            _collarMirrorZCheckBox.PropertyChanged += OnCollarSettingsChanged;
             _collarOffsetXSlider.PropertyChanged += OnCollarSettingsChanged;
             _collarOffsetYSlider.PropertyChanged += OnCollarSettingsChanged;
             _collarElevationSlider.PropertyChanged += OnCollarSettingsChanged;

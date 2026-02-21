@@ -7,7 +7,7 @@ namespace KnobForge.App.Views
 {
     public partial class MainWindow
     {
-        private void UpdateCollarMeshPathFeedback(CollarPreset preset, string? customPath)
+        private void UpdateCollarMeshPathFeedback(CollarPreset preset, string? customPath, bool? customImportedPresetOverride = null)
         {
             if (_collarResolvedMeshPathText == null || _collarMeshPathStatusText == null)
             {
@@ -22,7 +22,7 @@ namespace KnobForge.App.Views
                 return;
             }
 
-            bool customImportedPreset = preset == CollarPreset.ImportedStl;
+            bool customImportedPreset = customImportedPresetOverride ?? preset == CollarPreset.ImportedStl;
             string resolvedPath = CollarNode.ResolveImportedMeshPath(preset, customPath);
             _collarResolvedMeshPathText.Text = $"Resolved Source: {resolvedPath}";
 

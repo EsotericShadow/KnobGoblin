@@ -100,9 +100,10 @@ namespace KnobForge.App.Views
         private readonly Slider? _gripDepthSlider;
         private readonly Slider? _gripWidthSlider;
         private readonly Slider? _gripSharpnessSlider;
-        private readonly CheckBox? _collarEnabledCheckBox;
-        private readonly ComboBox? _collarPresetCombo;
-        private readonly TextBox? _collarMeshPathTextBox;
+            private readonly CheckBox? _collarEnabledCheckBox;
+            private readonly ComboBox? _collarPresetCombo;
+            private readonly Button? _refreshCollarLibraryButton;
+            private readonly TextBox? _collarMeshPathTextBox;
         private readonly TextBlock? _collarResolvedMeshPathText;
         private readonly TextBlock? _collarMeshPathStatusText;
         private readonly Slider? _collarScaleSlider;
@@ -111,6 +112,9 @@ namespace KnobForge.App.Views
         private readonly Slider? _collarHeadLengthSlider;
         private readonly Slider? _collarHeadThicknessSlider;
         private readonly Slider? _collarRotateSlider;
+        private readonly CheckBox? _collarMirrorXCheckBox;
+        private readonly CheckBox? _collarMirrorYCheckBox;
+        private readonly CheckBox? _collarMirrorZCheckBox;
         private readonly Slider? _collarOffsetXSlider;
         private readonly Slider? _collarOffsetYSlider;
         private readonly Slider? _collarElevationSlider;
@@ -365,6 +369,9 @@ namespace KnobForge.App.Views
             private readonly ObservableCollection<SceneNode> _sceneNodes;
             private readonly List<UserReferenceProfile> _userReferenceProfiles = new();
             private readonly List<ReferenceStyleOption> _referenceStyleOptions = new();
+            private readonly List<CollarPresetOption> _collarPresetOptions = new();
+            private CollarPresetOption? _lastSelectableCollarPresetOption;
+            private int _discoveredCollarLibraryCount;
             private readonly List<PaintLayerListItem> _paintLayerItems = new();
             private string? _selectedUserReferenceProfileName;
             private string? _currentProjectFilePath;
@@ -487,6 +494,7 @@ namespace KnobForge.App.Views
             _gripSharpnessSlider = this.FindControl<Slider>("GripSharpnessSlider");
             _collarEnabledCheckBox = this.FindControl<CheckBox>("CollarEnabledCheckBox");
             _collarPresetCombo = this.FindControl<ComboBox>("CollarPresetCombo");
+            _refreshCollarLibraryButton = this.FindControl<Button>("RefreshCollarLibraryButton");
             _collarMeshPathTextBox = this.FindControl<TextBox>("CollarMeshPathTextBox");
             _collarResolvedMeshPathText = this.FindControl<TextBlock>("CollarResolvedMeshPathText");
             _collarMeshPathStatusText = this.FindControl<TextBlock>("CollarMeshPathStatusText");
@@ -496,6 +504,9 @@ namespace KnobForge.App.Views
             _collarHeadLengthSlider = this.FindControl<Slider>("CollarHeadLengthSlider");
             _collarHeadThicknessSlider = this.FindControl<Slider>("CollarHeadThicknessSlider");
             _collarRotateSlider = this.FindControl<Slider>("CollarRotateSlider");
+            _collarMirrorXCheckBox = this.FindControl<CheckBox>("CollarMirrorXCheckBox");
+            _collarMirrorYCheckBox = this.FindControl<CheckBox>("CollarMirrorYCheckBox");
+            _collarMirrorZCheckBox = this.FindControl<CheckBox>("CollarMirrorZCheckBox");
             _collarOffsetXSlider = this.FindControl<Slider>("CollarOffsetXSlider");
             _collarOffsetYSlider = this.FindControl<Slider>("CollarOffsetYSlider");
             _collarElevationSlider = this.FindControl<Slider>("CollarElevationSlider");

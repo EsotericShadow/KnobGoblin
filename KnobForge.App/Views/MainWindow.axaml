@@ -332,11 +332,26 @@
                                                   Content="Enable Collar"/>
 
                                         <TextBlock Text="Preset"/>
-                                        <ComboBox x:Name="CollarPresetCombo"/>
+                                        <DockPanel LastChildFill="True">
+                                            <Button x:Name="RefreshCollarLibraryButton"
+                                                    Content="Refresh Library"
+                                                    DockPanel.Dock="Right"
+                                                    Margin="8,0,0,0"
+                                                    MinWidth="120"/>
+                                            <ComboBox x:Name="CollarPresetCombo"/>
+                                        </DockPanel>
 
-                                        <TextBlock Text="Custom Imported Mesh Path (.glb/.stl)"/>
+                                        <TextBlock Text="Imported Mesh Path (.glb/.stl)"/>
                                         <TextBox x:Name="CollarMeshPathTextBox"
                                                  Watermark="/Users/.../ouroboros.glb"/>
+                                        <TextBlock x:Name="CollarResolvedMeshPathText"
+                                                   Text="Resolved Source:"
+                                                   Foreground="#A9B8C9"
+                                                   TextWrapping="Wrap"/>
+                                        <TextBlock x:Name="CollarMeshPathStatusText"
+                                                   Text="Path status:"
+                                                   Foreground="#D4DCE5"
+                                                   TextWrapping="Wrap"/>
 
                                         <TextBlock Text="Imported Scale"/>
                                         <controls:SpriteKnobSlider x:Name="CollarScaleSlider" Minimum="0.05" Maximum="4"/>
@@ -390,6 +405,13 @@
                                             <TextBox x:Name="CollarRotateInputTextBox"
                                                      Width="96"
                                                      HorizontalContentAlignment="Right"/>
+                                        </StackPanel>
+
+                                        <TextBlock Text="Mirror Flip"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="12">
+                                            <CheckBox x:Name="CollarMirrorXCheckBox" Content="X"/>
+                                            <CheckBox x:Name="CollarMirrorYCheckBox" Content="Y"/>
+                                            <CheckBox x:Name="CollarMirrorZCheckBox" Content="Z"/>
                                         </StackPanel>
 
                                         <TextBlock Text="Imported Offset X"/>

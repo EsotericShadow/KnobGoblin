@@ -47,6 +47,9 @@ namespace KnobForge.Core.Scene
         private string _importedMeshPath = string.Empty;
         private float _importedScale = 1.0f;
         private float _importedRotationRadians = 0f;
+        private bool _importedMirrorX = false;
+        private bool _importedMirrorY = false;
+        private bool _importedMirrorZ = false;
         private float _importedHeadAngleOffsetRadians = 0f;
         private float _importedOffsetXRatio = 0f;
         private float _importedOffsetYRatio = 0f;
@@ -274,6 +277,24 @@ namespace KnobForge.Core.Scene
         {
             get => _importedRotationRadians;
             set => _importedRotationRadians = value;
+        }
+
+        public bool ImportedMirrorX
+        {
+            get => _importedMirrorX;
+            set => _importedMirrorX = value;
+        }
+
+        public bool ImportedMirrorY
+        {
+            get => _importedMirrorY;
+            set => _importedMirrorY = value;
+        }
+
+        public bool ImportedMirrorZ
+        {
+            get => _importedMirrorZ;
+            set => _importedMirrorZ = value;
         }
 
         // Local head-region angular offset used for imported STL deformation masks.

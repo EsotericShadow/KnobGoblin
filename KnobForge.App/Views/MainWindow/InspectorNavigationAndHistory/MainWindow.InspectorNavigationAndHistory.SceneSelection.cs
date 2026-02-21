@@ -231,6 +231,9 @@ namespace KnobForge.App.Views
                 ImportedMeshPath = collar.ImportedMeshPath,
                 ImportedScale = collar.ImportedScale,
                 ImportedRotationRadians = collar.ImportedRotationRadians,
+                ImportedMirrorX = collar.ImportedMirrorX,
+                ImportedMirrorY = collar.ImportedMirrorY,
+                ImportedMirrorZ = collar.ImportedMirrorZ,
                 ImportedHeadAngleOffsetRadians = collar.ImportedHeadAngleOffsetRadians,
                 ImportedOffsetXRatio = collar.ImportedOffsetXRatio,
                 ImportedOffsetYRatio = collar.ImportedOffsetYRatio,
@@ -277,6 +280,9 @@ namespace KnobForge.App.Views
             collar.ImportedMeshPath = snapshot.ImportedMeshPath;
             collar.ImportedScale = snapshot.ImportedScale;
             collar.ImportedRotationRadians = snapshot.ImportedRotationRadians;
+            collar.ImportedMirrorX = snapshot.ImportedMirrorX;
+            collar.ImportedMirrorY = snapshot.ImportedMirrorY;
+            collar.ImportedMirrorZ = snapshot.ImportedMirrorZ;
             collar.ImportedHeadAngleOffsetRadians = snapshot.ImportedHeadAngleOffsetRadians;
             collar.ImportedOffsetXRatio = snapshot.ImportedOffsetXRatio;
             collar.ImportedOffsetYRatio = snapshot.ImportedOffsetYRatio;

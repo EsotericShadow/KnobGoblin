@@ -239,6 +239,9 @@ namespace KnobForge.App.Views
                 _collarHeadLengthSlider == null ||
                 _collarHeadThicknessSlider == null ||
                 _collarRotateSlider == null ||
+                _collarMirrorXCheckBox == null ||
+                _collarMirrorYCheckBox == null ||
+                _collarMirrorZCheckBox == null ||
                 _collarOffsetXSlider == null ||
                 _collarOffsetYSlider == null ||
                 _collarElevationSlider == null ||
@@ -260,8 +263,9 @@ namespace KnobForge.App.Views
             _collarPresetCombo.IsEnabled = hasModel;
 
             bool importedPreset = hasModel && CollarNode.IsImportedMeshPreset(preset);
-            bool customImportedPreset = importedPreset && preset == CollarPreset.ImportedStl;
-            _collarMeshPathTextBox.IsEnabled = customImportedPreset;
+            CollarPresetOption selectedOption = ResolveSelectedCollarPresetOption();
+            bool customImportedPreset = importedPreset && selectedOption.AllowsCustomPathEntry;
+            _collarMeshPathTextBox.IsEnabled = importedPreset;
             _collarMeshPathTextBox.IsReadOnly = importedPreset && !customImportedPreset;
             _collarScaleSlider.IsEnabled = importedPreset;
             _collarBodyLengthSlider.IsEnabled = importedPreset;
@@ -269,6 +273,9 @@ namespace KnobForge.App.Views
             _collarHeadLengthSlider.IsEnabled = importedPreset;
             _collarHeadThicknessSlider.IsEnabled = importedPreset;
             _collarRotateSlider.IsEnabled = importedPreset;
+            _collarMirrorXCheckBox.IsEnabled = importedPreset;
+            _collarMirrorYCheckBox.IsEnabled = importedPreset;
+            _collarMirrorZCheckBox.IsEnabled = importedPreset;
             _collarOffsetXSlider.IsEnabled = importedPreset;
             _collarOffsetYSlider.IsEnabled = importedPreset;
             _collarElevationSlider.IsEnabled = hasModel;
@@ -333,7 +340,7 @@ namespace KnobForge.App.Views
             _collarMaterialRustSlider.IsEnabled = collarMaterialEnabled;
             _collarMaterialWearSlider.IsEnabled = collarMaterialEnabled;
             _collarMaterialGunkSlider.IsEnabled = collarMaterialEnabled;
-            UpdateCollarMeshPathFeedback(preset, _collarMeshPathTextBox.Text);
+            UpdateCollarMeshPathFeedback(preset, _collarMeshPathTextBox.Text, customImportedPreset);
         }
 
         private void RefreshInspectorFromProject(InspectorRefreshTabPolicy tabPolicy = InspectorRefreshTabPolicy.PreserveCurrentTab)
@@ -354,7 +361,8 @@ namespace KnobForge.App.Views
                 _collarEnabledCheckBox == null || _collarPresetCombo == null || _collarMeshPathTextBox == null ||
                 _collarScaleSlider == null || _collarBodyLengthSlider == null || _collarBodyThicknessSlider == null ||
                 _collarHeadLengthSlider == null || _collarHeadThicknessSlider == null ||
-                _collarRotateSlider == null || _collarOffsetXSlider == null || _collarOffsetYSlider == null || _collarElevationSlider == null || _collarInflateSlider == null ||
+                _collarRotateSlider == null || _collarMirrorXCheckBox == null || _collarMirrorYCheckBox == null || _collarMirrorZCheckBox == null ||
+                _collarOffsetXSlider == null || _collarOffsetYSlider == null || _collarElevationSlider == null || _collarInflateSlider == null ||
                 _collarMaterialBaseRSlider == null || _collarMaterialBaseGSlider == null || _collarMaterialBaseBSlider == null ||
                 _collarMaterialMetallicSlider == null || _collarMaterialRoughnessSlider == null || _collarMaterialPearlescenceSlider == null ||
                 _collarMaterialRustSlider == null || _collarMaterialWearSlider == null || _collarMaterialGunkSlider == null ||
@@ -441,14 +449,19 @@ namespace KnobForge.App.Views
                     if (collar != null)
                     {
                         _collarEnabledCheckBox.IsChecked = collar.Enabled;
-                        _collarPresetCombo.SelectedItem = collar.Preset;
-                        _collarMeshPathTextBox.Text = CollarNode.ResolveImportedMeshPath(collar.Preset, collar.ImportedMeshPath);
+                        CollarPresetOption collarOption = ResolveCollarPresetOptionForState(collar.Preset, collar.ImportedMeshPath);
+                        _collarPresetCombo.SelectedItem = collarOption;
+                        _lastSelectableCollarPresetOption = collarOption;
+                        _collarMeshPathTextBox.Text = collarOption.ResolveImportedMeshPath(collar.ImportedMeshPath);
                         _collarScaleSlider.Value = collar.ImportedScale;
                         _collarBodyLengthSlider.Value = collar.ImportedBodyLengthScale;
                         _collarBodyThicknessSlider.Value = collar.ImportedBodyThicknessScale;
                         _collarHeadLengthSlider.Value = collar.ImportedHeadLengthScale;
                         _collarHeadThicknessSlider.Value = collar.ImportedHeadThicknessScale;
                         _collarRotateSlider.Value = RadiansToDegrees(collar.ImportedRotationRadians);
+                        _collarMirrorXCheckBox.IsChecked = collar.ImportedMirrorX;
+                        _collarMirrorYCheckBox.IsChecked = collar.ImportedMirrorY;
+                        _collarMirrorZCheckBox.IsChecked = collar.ImportedMirrorZ;
                         _collarOffsetXSlider.Value = collar.ImportedOffsetXRatio;
                         _collarOffsetYSlider.Value = collar.ImportedOffsetYRatio;
                         _collarElevationSlider.Value = collar.ElevationRatio;
@@ -466,7 +479,9 @@ namespace KnobForge.App.Views
                     else
                     {
                         _collarEnabledCheckBox.IsChecked = false;
-                        _collarPresetCombo.SelectedItem = CollarPreset.None;
+                        CollarPresetOption noneOption = ResolveCollarPresetOptionForState(CollarPreset.None, null);
+                        _collarPresetCombo.SelectedItem = noneOption;
+                        _lastSelectableCollarPresetOption = noneOption;
                         _collarMeshPathTextBox.Text = string.Empty;
                         _collarScaleSlider.Value = 1.0;
                         _collarBodyLengthSlider.Value = 1.0;
@@ -474,6 +489,9 @@ namespace KnobForge.App.Views
                         _collarHeadLengthSlider.Value = 1.0;
                         _collarHeadThicknessSlider.Value = 1.0;
                         _collarRotateSlider.Value = 0.0;
+                        _collarMirrorXCheckBox.IsChecked = false;
+                        _collarMirrorYCheckBox.IsChecked = false;
+                        _collarMirrorZCheckBox.IsChecked = false;
                         _collarOffsetXSlider.Value = 0.0;
                         _collarOffsetYSlider.Value = 0.0;
                         _collarElevationSlider.Value = 0.0;

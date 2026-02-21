@@ -123,11 +123,15 @@ public static partial class ImportedStlCollarMeshBuilder
         float zOffset = knobHalfHeight * collarNode.ElevationRatio;
         float xOffset = collarNode.ImportedOffsetXRatio * knobRadius;
         float yOffset = collarNode.ImportedOffsetYRatio * knobRadius;
+        Vector3 mirrorScale = new(
+            collarNode.ImportedMirrorX ? -1f : 1f,
+            collarNode.ImportedMirrorY ? -1f : 1f,
+            collarNode.ImportedMirrorZ ? -1f : 1f);
 
         var positions = new Vector3[centered.Length];
         for (int i = 0; i < centered.Length; i++)
         {
-            Vector3 p = centered[i] * scale;
+            Vector3 p = (centered[i] * scale) * mirrorScale;
             positions[i] = new Vector3(
                 ((p.X * cosA) - (p.Y * sinA)) + xOffset,
                 ((p.X * sinA) + (p.Y * cosA)) + yOffset,

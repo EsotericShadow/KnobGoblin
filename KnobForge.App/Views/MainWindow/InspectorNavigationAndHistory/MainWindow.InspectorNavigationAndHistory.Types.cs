@@ -135,6 +135,9 @@ namespace KnobForge.App.Views
             public string ImportedMeshPath { get; set; } = string.Empty;
             public float ImportedScale { get; set; }
             public float ImportedRotationRadians { get; set; }
+            public bool ImportedMirrorX { get; set; }
+            public bool ImportedMirrorY { get; set; }
+            public bool ImportedMirrorZ { get; set; }
             public float ImportedHeadAngleOffsetRadians { get; set; }
             public float ImportedOffsetXRatio { get; set; }
             public float ImportedOffsetYRatio { get; set; }
